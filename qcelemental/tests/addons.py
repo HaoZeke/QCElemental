@@ -70,8 +70,6 @@ def drop_qcsk(instance, tnm: str, schema_name: str = None):
         if isinstance(instance, qcelemental.models.ProtoModel):
             # fp.write(instance.json(exclude_unset=True, exclude_none=True))  # works but file is one-line
             instance = json.loads(instance.json(exclude_unset=True, exclude_none=True))
-        elif isinstance(instance, dict):
-            pass
-        else:
+        elif not isinstance(instance, dict):
             raise TypeError
         json.dump(instance, fp, sort_keys=True, indent=2)

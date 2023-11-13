@@ -125,10 +125,7 @@ class PeriodicTable:
         identifier = self._resolve_atom_to_key(atom)
         mass = self._eliso2mass[identifier]
 
-        if return_decimal:
-            return Decimal(mass)
-        else:
-            return float(mass)
+        return Decimal(mass) if return_decimal else float(mass)
 
     def to_A(self, atom: Union[int, str]) -> int:
         r"""Get mass number of `atom`.
@@ -379,25 +376,24 @@ def run_comparison():
     for zz in self._z2el:
         if 0 < zz < 108:
             assert (
-                self._z2el[zz] == checkup_data.periodictable.z2el[zz].capitalize()
-            ), "Element {} differs from {} for Z={}".format(
-                self._z2el[zz], checkup_data.periodictable.z2el[zz].capitalize(), zz
-            )
+                self._z2el[zz]
+                == checkup_data.periodictable.z2el[zz].capitalize()
+            ), f"Element {self._z2el[zz]} differs from {checkup_data.periodictable.z2el[zz].capitalize()} for Z={zz}"
 
     print(bcolors.OKBLUE + "\nChecking el2z vs. Psi4 ..." + bcolors.ENDC)
     for el in self._el2z:
         if self._el2z[el] > 107:
             break
         if el not in ["X", "Gh"]:
-            assert self._el2z[el] == checkup_data.periodictable.el2z[el.upper()], "Element {} differs from {}".format(
-                self._el2z[el], checkup_data.periodictable.el2z[el.upper()]
-            )
+            assert (
+                self._el2z[el] == checkup_data.periodictable.el2z[el.upper()]
+            ), f"Element {self._el2z[el]} differs from {checkup_data.periodictable.el2z[el.upper()]}"
 
     translate = {"UUB": "Cn", "UUT": "Nh", "UUQ": "Fl", "UUP": "Mc", "UUH": "Lv", "UUS": "Ts", "UUO": "Og"}
     translate = {v: k for k, v in translate.items()}
 
     tol = 1.0e-5
-    print(bcolors.OKBLUE + "\nChecking ({}) el2mass vs. Psi4 ...".format(tol))
+    print(f"{bcolors.OKBLUE}\nChecking ({tol}) el2mass vs. Psi4 ...")
     for el in self.E:
         ptel = translate.get(el, el.upper())
         if el not in ["X", "Gh"]:
@@ -414,7 +410,9 @@ def run_comparison():
                 print("Element {} differs by {:12.8f}: {} (this) vs {} (psi)".format(el, diff, ref, val))
 
     tol = 1.0e-5
-    print(bcolors.OKBLUE + "\nChecking ({}) el2mass vs. Cfour ...".format(tol) + bcolors.ENDC)
+    print(
+        f"{bcolors.OKBLUE}\nChecking ({tol}) el2mass vs. Cfour ...{bcolors.ENDC}"
+    )
     for el in self.E:
         zz = self._el2z[el]
         if zz > 112:
@@ -433,7 +431,9 @@ def run_comparison():
                 print("Element {} differs by {:12.8f}: {} (this) vs {} (cfour)".format(el, diff, ref, val))
 
     tol = 1.0e-3
-    print(bcolors.OKBLUE + "\nChecking ({}) eliso2mass vs. Psi4 ...".format(tol) + bcolors.ENDC)
+    print(
+        f"{bcolors.OKBLUE}\nChecking ({tol}) eliso2mass vs. Psi4 ...{bcolors.ENDC}"
+    )
     for el in self._eliso2mass:
         ptel = translate.get(el, el.upper())
         if el not in ["X", "Gh"]:
@@ -491,7 +491,9 @@ def write_c_header(filename: str = "masses.h") -> None:
 
     with open(filename, "w") as handle:
         handle.write("\n".join(text))
-    print("File written ({}). Remember to add license and clang-format it.".format(filename))
+    print(
+        f"File written ({filename}). Remember to add license and clang-format it."
+    )
 
 
 # el2mass["GH"] = 0.  # note that ghost atoms in Cfour have mass 100.

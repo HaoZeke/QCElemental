@@ -2,10 +2,8 @@
 CPUs not in the JSON sources, but present in QCArchive data
 """
 
-extra_cpus = []
 
-# AMD Opteron(tm) Processor 6168
-extra_cpus.append(
+extra_cpus = [
     {
         "base_clock": 1_900_000_000,
         "boost_clock": None,
@@ -19,11 +17,7 @@ extra_cpus.append(
         "target_use": "Server",
         "type": "cpu",
         "vendor": "amd",
-    }
-)
-
-# AMD Opteron(tm) Processor 6174
-extra_cpus.append(
+    },
     {
         "base_clock": 2_200_000_000,
         "boost_clock": None,
@@ -37,11 +31,7 @@ extra_cpus.append(
         "target_use": "Server",
         "type": "cpu",
         "vendor": "amd",
-    }
-)
-
-# Intel(R) Xeon(R) CPU E5-2673 v3 @ 2.40GHz
-extra_cpus.append(
+    },
     {
         "base_clock": 2_400_000_000,
         "boost_clock": 3_200_000_000,
@@ -55,8 +45,8 @@ extra_cpus.append(
         "target_use": "Server",
         "type": "cpu",
         "vendor": "intel",
-    }
-)
+    },
+]
 
 fixes = {
     ("amd", "AMD EPYC\u2122 7551P"): {"launch_date": 2017},

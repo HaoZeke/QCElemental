@@ -121,8 +121,8 @@ def _check(msg, ans, ref, verbose=1):
         for a in tref:
             print("Supplied:", a)
 
-    assert extra_answers == set()
-    assert missd_answers == set()
+    assert not extra_answers
+    assert not missd_answers
     #    print(msg, 'failed:')
     #    if extra_answers != set():
     #        for a in extra_answers:
@@ -210,7 +210,7 @@ def test_example2(alg):
             g_match.add_edge(ii[0], ii[1])
         # plotGraph(g_match)
 
-    assert ref == []
+    assert not ref
     print("Example 2 passed")
 
 

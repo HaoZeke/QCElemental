@@ -43,20 +43,20 @@ def which_import(
     if (module_spec is None) or (namespace_package and not namespace_ok):
         if raise_error:
             raise ModuleNotFoundError(
-                f"Python module '{module}' not found in envvar PYTHONPATH.{' ' + raise_msg if raise_msg else ''}"
+                f"Python module '{module}' not found in envvar PYTHONPATH.{f' {raise_msg}' if raise_msg else ''}"
             )
         elif return_bool:
             return False
         else:
             return None
+    elif return_bool:
+        return True
     else:
-        if return_bool:
-            return True
-        else:
-            if namespace_package:
-                return module_spec.submodule_search_locations
-            else:
-                return module_spec.origin
+        return (
+            module_spec.submodule_search_locations
+            if namespace_package
+            else module_spec.origin
+        )
 
 
 def which(
@@ -102,7 +102,6 @@ def which(
     ans = shutil.which(command, mode=os.F_OK | os.X_OK, path=lenv["PATH"])
 
     if sys.platform == "win32" and sys.version_info >= (3, 12, 0) and sys.version_info < (3, 12, 1):
-        # https://github.com/python/cpython/issues/109590
         if command == "psi4":
             ans = shutil.which("psi4.exe", mode=os.F_OK | os.X_OK, path=lenv["PATH"])
             if ans is None:
@@ -118,13 +117,10 @@ def which(
 
     if raise_error and ans is None:
         raise ModuleNotFoundError(
-            f"Command '{command}' not found in envvar PATH.{local_raise_msg}{' ' + raise_msg if raise_msg else ''}"
+            f"Command '{command}' not found in envvar PATH.{local_raise_msg}{f' {raise_msg}' if raise_msg else ''}"
         )
 
-    if return_bool:
-        return bool(ans)
-    else:
-        return ans
+    return bool(ans) if return_bool else ans
 
 
 def safe_version(*args, **kwargs) -> str:
@@ -133,8 +129,7 @@ def safe_version(*args, **kwargs) -> str:
     """
     import pkg_resources
 
-    version = pkg_resources.safe_version(*args, **kwargs)
-    return version
+    return pkg_resources.safe_version(*args, **kwargs)
 
 
 def parse_version(*args, **kwargs):

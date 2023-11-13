@@ -293,7 +293,7 @@ def reconcile_nucleus(
     if E is not None:
         offer_element_symbol(E)
 
-    if label is not None and speclabel is True:
+    if label is not None and speclabel:
         lbl_A, lbl_Z, lbl_E, lbl_mass, lbl_real, lbl_user = parse_nucleus_label(label)
 
         if lbl_Z is not None:
@@ -403,35 +403,21 @@ def parse_nucleus_label(label: str):
     None, 555, None, 0.1 False, '_mines3'
 
     """
-    matchobj = _nucleus.match(label)
+    if not (matchobj := _nucleus.match(label)):
+        raise ValidationError(f"""Nucleus label is not parseable: {label}""")
 
-    if matchobj:
-        real = not (matchobj.group("gh1") or matchobj.group("gh2"))
+    real = not matchobj.group("gh1") and not matchobj.group("gh2")
 
-        if matchobj.group("A"):
-            A = int(matchobj.group("A"))
-        else:
-            A = None
+    A = int(matchobj.group("A")) if matchobj.group("A") else None
+    Z = int(matchobj.group("Z")) if matchobj.group("Z") else None
+    E = matchobj.group("E")
 
-        if matchobj.group("Z"):
-            Z = int(matchobj.group("Z"))
-        else:
-            Z = None
-
-        E = matchobj.group("E")
-
-        if matchobj.group("user1"):
-            user = matchobj.group("user1")
-        elif matchobj.group("user2"):
-            user = matchobj.group("user2")
-        else:
-            user = None
-
-        if matchobj.group("mass"):
-            mass = float(matchobj.group("mass"))
-        else:
-            mass = None
+    if matchobj.group("user1"):
+        user = matchobj.group("user1")
+    elif matchobj.group("user2"):
+        user = matchobj.group("user2")
     else:
-        raise ValidationError("""Nucleus label is not parseable: {}""".format(label))
+        user = None
 
+    mass = float(matchobj.group("mass")) if matchobj.group("mass") else None
     return A, Z, E, mass, real, user

@@ -28,7 +28,7 @@ def type_to_string(input_type):
 
 def is_pydantic(test_object):
     try:
-        instance = isinstance(test_object, BaseSettings) or isinstance(test_object, BaseModel)
+        instance = isinstance(test_object, (BaseSettings, BaseModel))
     except TypeError:
         instance = False
     try:
@@ -76,7 +76,9 @@ def parse_type_str(prop) -> str:
         sub_fields = prop.sub_fields
         # Special case of Optional[]
         # if sub_fields is not None and any([sf.sub_fields is type(None) for sf in sub_fields]):
-        if sub_fields is not None and any([sf.type_ is type(None) for sf in sub_fields]):
+        if sub_fields is not None and any(
+            sf.type_ is type(None) for sf in sub_fields
+        ):
             reconstructed_props = [f for f in sub_fields if f.type_ is not type(None)]
             parsed_types = [parse_type_str(f) for f in reconstructed_props]
             if len(parsed_types) == 1:
@@ -84,27 +86,33 @@ def parse_type_str(prop) -> str:
             else:
                 prop_type_str = "Union[" + ", ".join(parsed_types) + "]"
         elif prop.shape == fields.SHAPE_MAPPING:
-            prop_type_str = "Dict[" + parse_type_str(key_field) + ", " + parse_type_str(prop.type_) + "]"
+            prop_type_str = f"Dict[{parse_type_str(key_field)}, {parse_type_str(prop.type_)}]"
         elif sub_fields is not None:
             # Not "optional", but iterable
-            prop_type_str = typing_map[prop.shape] + "[" + ", ".join([parse_type_str(sf) for sf in sub_fields]) + "]"
+            prop_type_str = (
+                f"{typing_map[prop.shape]}["
+                + ", ".join([parse_type_str(sf) for sf in sub_fields])
+                + "]"
+            )
         elif prop.type_ is Any:
             prop_type_str = "Any"
     elif "ConstrainedInt" in prop.type_.__name__:
         prop_type_str = "ConstrainedInt"
     elif "ConstrainedFloat" in prop.type_.__name__:
         prop_type_str = "ConstrainedFloat"
-    elif prop.shape in typing_map.keys():
+    elif prop.shape in typing_map:
         if prop.sub_fields is None:
             # Single item
             if prop.type_.__module__ == "pydantic.types":
                 # A bit of a catch-all
                 prop_type_str = prop.type_.__name__
             else:
-                prop_type_str = typing_map[prop.shape] + "[" + parse_type_str(prop.type_) + "]"
+                prop_type_str = f"{typing_map[prop.shape]}[{parse_type_str(prop.type_)}]"
         else:
             prop_type_str = (
-                typing_map[prop.shape] + "[" + ", ".join([parse_type_str(sf) for sf in prop.sub_fields]) + "]"
+                f"{typing_map[prop.shape]}["
+                + ", ".join([parse_type_str(sf) for sf in prop.sub_fields])
+                + "]"
             )
     else:
         # Finally, with nothing else to do...
@@ -123,11 +131,7 @@ def doc_formatter(base_docs: str, target_object: BaseModel, allow_failure: bool 
     """
 
     # Convert the None to regex-parsable string
-    if base_docs is None:
-        doc_edit = ""
-    else:
-        doc_edit = base_docs
-
+    doc_edit = "" if base_docs is None else base_docs
     # Is pydantic and not already formatted
     if is_pydantic(target_object) and not re.search(r"^\s*Parameters\n", doc_edit, re.MULTILINE):
         try:
@@ -149,7 +153,7 @@ def doc_formatter(base_docs: str, target_object: BaseModel, allow_failure: bool 
                 # Combine in the following format:
                 # name : type(, Optional, Default)
                 #   description
-                first_line = prop_name + " : " + prop_type_str
+                first_line = f"{prop_name} : {prop_type_str}"
                 if not prop.required and (prop.default is None or is_pydantic(prop.default)):
                     first_line += ", Optional"
                 elif prop.default is not None:
@@ -224,9 +228,7 @@ def auto_gen_docs_on_demand(
     try:
         target.__doc__ = AutoPydanticDocGenerator(target, allow_failure=allow_failure)  # type: ignore
     except AutoDocError:
-        if ignore_reapply:
-            pass
-        else:
+        if not ignore_reapply:
             raise
     # Reapply by force to allow inherited models to auto doc as well
     if force_reapply:

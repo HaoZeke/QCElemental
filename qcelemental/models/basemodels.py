@@ -74,7 +74,7 @@ class ProtoModel(BaseModel):
         return cls.parse_obj(obj)
 
     @classmethod
-    def parse_file(cls, path: Union[str, Path], *, encoding: Optional[str] = None) -> "ProtoModel":  # type: ignore
+    def parse_file(cls, path: Union[str, Path], *, encoding: Optional[str] = None) -> "ProtoModel":    # type: ignore
         r"""Parses a file into a Model object.
 
         Parameters
@@ -93,11 +93,11 @@ class ProtoModel(BaseModel):
         """
         path = Path(path)
         if encoding is None:
-            if path.suffix in [".json", ".js"]:
+            if path.suffix in {".json", ".js"}:
                 encoding = "json"
-            elif path.suffix in [".msgpack"]:
+            elif path.suffix in {".msgpack"}:
                 encoding = "msgpack-ext"
-            elif path.suffix in [".pickle"]:
+            elif path.suffix in {".pickle"}:
                 encoding = "pickle"
             else:
                 raise TypeError("Could not infer `encoding`, please provide a `encoding` for this file.")

@@ -2,6 +2,7 @@
 This file will generate a JSON blob usable by QCElemental for physical constants
 """
 
+
 import datetime
 import json
 
@@ -59,10 +60,10 @@ for pc in constants["constant"]:
         "value": value.replace(" ", ""),
         "uncertainty": uncertainty,
     }
-output += "nist_{}_codata = {}".format(year, constants_json)
+output += f"nist_{year}_codata = {constants_json}"
 
 output = FormatCode(output)
 
-fn = "nist_{}_codata.py".format(year)
+fn = f"nist_{year}_codata.py"
 with open(fn, "w") as handle:
     handle.write(output[0])

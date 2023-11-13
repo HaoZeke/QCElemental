@@ -57,7 +57,7 @@ class DFTFunctionalContext:
         self.name = context
 
     def __str__(self) -> str:
-        return "DFTFunctionalContext(context='{}')".format(self.name)
+        return f"DFTFunctionalContext(context='{self.name}')"
 
 
 # singleton

@@ -18,14 +18,14 @@ class DataUnavailableError(Exception):
     """Error when dataset incomplete and otherwise valid query can't be fulfilled."""
 
     def __init__(self, dataset, atom):
-        self.message = "Dataset ({}) missing value for key ({})".format(dataset, atom)
+        self.message = f"Dataset ({dataset}) missing value for key ({atom})"
 
 
 class MoleculeFormatError(Exception):
     """Error called when a molparse.from_string contains unparsable lines."""
 
     def __init__(self, msg):
-        self.message = "Molecule line uninterpretable: {}".format(msg)
+        self.message = f"Molecule line uninterpretable: {msg}"
 
 
 class ValidationError(Exception):
@@ -35,7 +35,7 @@ class ValidationError(Exception):
     """
 
     def __init__(self, msg):
-        self.message = "Input Error: {}".format(msg)
+        self.message = f"Input Error: {msg}"
 
 
 class ChoicesError(Exception):
@@ -46,5 +46,5 @@ class ChoicesError(Exception):
     """
 
     def __init__(self, msg, choices=None):
-        self.message = "Input Error: {}".format(msg)
+        self.message = f"Input Error: {msg}"
         self.choices = {} if choices is None else choices

@@ -53,9 +53,7 @@ def guess_connectivity(
         where = np.where(dists < cutoff)[0]
         where += x + 1
 
-        for atom2 in where:
-            con.append((x, atom2))
-
+        con.extend((x, atom2) for atom2 in where)
     if default_connectivity:
         con = [(x[0], x[1], default_connectivity) for x in con]
 

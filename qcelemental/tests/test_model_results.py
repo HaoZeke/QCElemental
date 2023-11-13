@@ -172,7 +172,7 @@ def optimization_data_fixture(result_data_fixture):
         trajectory.append(result)
         energies.append(x)
 
-    ret = {
+    return {
         "initial_molecule": result_data_fixture["molecule"],
         "final_molecule": result_data_fixture["molecule"],
         "trajectory": trajectory,
@@ -181,8 +181,6 @@ def optimization_data_fixture(result_data_fixture):
         "provenance": {"creator": "qcel"},
         "input_specification": {"model": {"method": "UFF"}},
     }
-
-    return ret
 
 
 @pytest.mark.parametrize("center_name", center_data.keys())
@@ -333,7 +331,7 @@ def test_wavefunction_protocols(protocol, restricted, provided, expected, wavefu
     bas = wfn_data["basis"]
 
     for name in provided:
-        scf_name = "scf_" + name
+        scf_name = f"scf_{name}"
         wfn_data[name] = scf_name
         if "eigen" in name:
             wfn_data[scf_name] = np.random.rand(bas.nbf)
@@ -346,7 +344,11 @@ def test_wavefunction_protocols(protocol, restricted, provided, expected, wavefu
     if len(expected) == 0:
         assert wfn.wavefunction is None
     else:
-        expected_keys = set(expected) | {"scf_" + x for x in expected} | {"basis", "restricted"}
+        expected_keys = (
+            set(expected)
+            | {f"scf_{x}" for x in expected}
+            | {"basis", "restricted"}
+        )
         assert wfn.wavefunction.dict().keys() == expected_keys
 
 
@@ -490,7 +492,7 @@ def test_result_properties_array(request):
 def test_result_derivatives_array(request):
     nat = 4
     lgrad = list(range(nat * 3))
-    lhess = list(range(nat * nat * 9))
+    lhess = list(range(nat**2 * 9))
 
     obj = qcel.models.AtomicResultProperties(calcinfo_natom=nat, return_gradient=lgrad, scf_total_hessian=lhess)
     drop_qcsk(obj, request.node.name)

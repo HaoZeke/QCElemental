@@ -15,17 +15,17 @@ with open(args.conda_file[0], "r") as handle:
     script = handle.read()
 
 tmp_file = "tmp_env.yaml"
-script = script.replace("- python", "- python {}*".format(args.python[0]))
+script = script.replace("- python", f"- python {args.python[0]}*")
 
 with open(tmp_file, "w") as handle:
     handle.write(script)
 
 conda_path = shutil.which("conda")
 
-print("CONDA ENV NAME  {}".format(args.name[0]))
-print("PYTHON VERSION  {}".format(args.python[0]))
-print("CONDA FILE NAME {}".format(args.conda_file[0]))
-print("CONDA path      {}".format(conda_path))
+print(f"CONDA ENV NAME  {args.name[0]}")
+print(f"PYTHON VERSION  {args.python[0]}")
+print(f"CONDA FILE NAME {args.conda_file[0]}")
+print(f"CONDA path      {conda_path}")
 
-sp.call("{} env create -n {} -f {}".format(conda_path, args.name[0], tmp_file), shell=True)
+sp.call(f"{conda_path} env create -n {args.name[0]} -f {tmp_file}", shell=True)
 os.unlink(tmp_file)

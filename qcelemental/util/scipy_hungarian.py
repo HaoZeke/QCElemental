@@ -95,7 +95,9 @@ def linear_sum_assignment(cost_matrix, return_cost=False):
         raise ValueError("expected a matrix (2-d array), got a %r array" % (cost_matrix.shape,))
 
     if not (np.issubdtype(cost_matrix.dtype, np.number) or cost_matrix.dtype == np.dtype(bool)):
-        raise ValueError("expected a matrix containing numerical entries, got %s" % (cost_matrix.dtype,))
+        raise ValueError(
+            f"expected a matrix containing numerical entries, got {cost_matrix.dtype}"
+        )
 
     if np.any(np.isinf(cost_matrix) | np.isnan(cost_matrix)):
         raise ValueError("matrix contains invalid numeric entries")
@@ -214,21 +216,21 @@ def _step4(state):
         row, col = np.unravel_index(np.argmax(covered_C), (n, m))
         if covered_C[row, col] == 0:
             return _step6
+        state.marked[row, col] = 2
+        # Find the first starred element in the row
+        star_col = np.argmax(state.marked[row] == 1)
+        if state.marked[row, star_col] == 1:
+            col = star_col
+            state.row_uncovered[row] = False
+            state.col_uncovered[col] = True
+            covered_C[:, col] = C[:, col] * (np.asarray(state.row_uncovered, dtype=int))
+            covered_C[row] = 0
+
         else:
-            state.marked[row, col] = 2
-            # Find the first starred element in the row
-            star_col = np.argmax(state.marked[row] == 1)
-            if state.marked[row, star_col] != 1:
-                # Could not find one
-                state.Z0_r = row
-                state.Z0_c = col
-                return _step5
-            else:
-                col = star_col
-                state.row_uncovered[row] = False
-                state.col_uncovered[col] = True
-                covered_C[:, col] = C[:, col] * (np.asarray(state.row_uncovered, dtype=int))
-                covered_C[row] = 0
+            # Could not find one
+            state.Z0_r = row
+            state.Z0_c = col
+            return _step5
 
 
 def _step5(state):
@@ -254,10 +256,9 @@ def _step5(state):
         if state.marked[row, path[count, 1]] != 1:
             # Could not find one
             break
-        else:
-            count += 1
-            path[count, 0] = row
-            path[count, 1] = path[count - 1, 1]
+        count += 1
+        path[count, 0] = row
+        path[count, 1] = path[count - 1, 1]
 
         # Find the first prime element in the row defined by the
         # first path step

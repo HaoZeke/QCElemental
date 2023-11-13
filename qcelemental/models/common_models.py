@@ -36,8 +36,8 @@ class Provenance(ProtoModel):
         canonical_repr = True
         extra: str = "allow"
 
-        def schema_extra(schema, model):
-            schema["$schema"] = qcschema_draft
+        def schema_extra(self, model):
+            self["$schema"] = qcschema_draft
 
 
 class Model(ProtoModel):
@@ -71,10 +71,7 @@ class DriverEnum(str, Enum):
 
     def derivative_int(self):
         egh = ["energy", "gradient", "hessian", "third", "fourth", "fifth"]
-        if self == "properties":
-            return 0
-        else:
-            return egh.index(self)
+        return 0 if self == "properties" else egh.index(self)
 
 
 class ComputeError(ProtoModel):

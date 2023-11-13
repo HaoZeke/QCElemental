@@ -68,7 +68,7 @@ def test_representation():
 
 
 def test_str():
-    print(str(qcelemental.vdwradii))
+    print(qcelemental.vdwradii)
     assert "VanderWaalsRadii(" in str(qcelemental.vdwradii)
 
 

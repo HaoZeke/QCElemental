@@ -43,21 +43,20 @@ class VanderWaalsRadii:
 
         from .data import mantina_2009_vanderwaals_radii
 
-        if context == "MANTINA2009":
-            self.doi = mantina_2009_vanderwaals_radii["doi"]
-            self.native_units = mantina_2009_vanderwaals_radii["units"]
-
-            # TypedDict wont be in until 3.8, have to ignore heterogeneous dicts for now
-            for vdwr in mantina_2009_vanderwaals_radii["vanderwaals_radii"]:  # type: ignore
-                self.vdwr[vdwr[0]] = Datum(vdwr[0], self.native_units, Decimal(vdwr[1]), doi=self.doi)
-        else:
+        if context != "MANTINA2009":
             raise KeyError("Context set as '{}', only contexts {'MANTINA2009', } are currently supported")
 
+        self.doi = mantina_2009_vanderwaals_radii["doi"]
+        self.native_units = mantina_2009_vanderwaals_radii["units"]
+
+        # TypedDict wont be in until 3.8, have to ignore heterogeneous dicts for now
+        for vdwr in mantina_2009_vanderwaals_radii["vanderwaals_radii"]:  # type: ignore
+            self.vdwr[vdwr[0]] = Datum(vdwr[0], self.native_units, Decimal(vdwr[1]), doi=self.doi)
         self.name = context
         self.year = int(mantina_2009_vanderwaals_radii["date"][:4])  # type: ignore
 
     def __str__(self) -> str:
-        return "VanderWaalsRadii(context='{}')".format(self.name)
+        return f"VanderWaalsRadii(context='{self.name}')"
 
     def get(
         self, atom: Union[int, str], *, return_tuple: bool = False, units: str = "bohr", missing: float = None
@@ -104,25 +103,17 @@ class VanderWaalsRadii:
             If `atom` is a valid element or nuclide but not one for which a van der Waals radius is available and `missing=None`.
 
         """
-        if atom in self.vdwr.keys():
-            # catch extra labels like 'C_sp3'
-            identifier = atom
-        else:
-            identifier = periodictable.to_E(atom)
-
+        identifier = atom if atom in self.vdwr.keys() else periodictable.to_E(atom)
         try:
             assert isinstance(identifier, str)  # Should be string by now
             qca = self.vdwr[identifier]
         except KeyError as e:
-            if missing is not None and return_tuple is False:
+            if missing is not None and not return_tuple:
                 return missing
             else:
                 raise DataUnavailableError("vanderwaals radius", identifier) from e
 
-        if return_tuple:
-            return qca
-        else:
-            return qca.to_units(units)
+        return qca if return_tuple else qca.to_units(units)
 
     def string_representation(self) -> str:
         """Print name, value, and units of all van der Waals radii."""
@@ -153,7 +144,7 @@ class VanderWaalsRadii:
         for el in periodictable.E:
             try:
                 qca = self.vdwr[el]
-                text.append("{},  /*- [{}] {} {} -*/".format(qca.data, qca.units, qca.label, qca.comment))
+                text.append(f"{qca.data},  /*- [{qca.units}] {qca.label} {qca.comment} -*/")
             except KeyError:
                 text.append(
                     "{:.2f},  /*- [{}] {} {} -*/".format(
@@ -161,13 +152,12 @@ class VanderWaalsRadii:
                     )
                 )
 
-        text.append("};")
-        text.append("#endif /* header guard */")
-        text.append("")
-
+        text.extend(("};", "#endif /* header guard */", ""))
         with open(filename, "w") as handle:
             handle.write("\n".join(text))
-        print("File written ({}). Remember to add license and clang-format it.".format(filename))
+        print(
+            f"File written ({filename}). Remember to add license and clang-format it."
+        )
 
 
 # singleton

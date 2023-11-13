@@ -42,15 +42,14 @@ def msgpackext_encode(obj: Any) -> Any:
         pass
 
     if isinstance(obj, np.ndarray):
-        if obj.shape:
-            data = {b"_nd_": True, b"dtype": obj.dtype.str, b"data": np.ascontiguousarray(obj).tobytes()}
-            if len(obj.shape) > 1:
-                data[b"shape"] = obj.shape
-            return data
-
-        else:
+        if not obj.shape:
             # Converts np.array(5) -> 5
             return obj.tolist()
+
+        data = {b"_nd_": True, b"dtype": obj.dtype.str, b"data": np.ascontiguousarray(obj).tobytes()}
+        if len(obj.shape) > 1:
+            data[b"shape"] = obj.shape
+        return data
 
     return obj
 
@@ -128,15 +127,14 @@ class JSONExtArrayEncoder(json.JSONEncoder):
             pass
 
         if isinstance(obj, np.ndarray):
-            if obj.shape:
-                data = {"_nd_": True, "dtype": obj.dtype.str, "data": np.ascontiguousarray(obj).tobytes().hex()}
-                if len(obj.shape) > 1:
-                    data["shape"] = obj.shape
-                return data
-
-            else:
+            if not obj.shape:
                 # Converts np.array(5) -> 5
                 return obj.tolist()
+
+            data = {"_nd_": True, "dtype": obj.dtype.str, "data": np.ascontiguousarray(obj).tobytes().hex()}
+            if len(obj.shape) > 1:
+                data["shape"] = obj.shape
+            return data
 
         return json.JSONEncoder.default(self, obj)
 
@@ -198,11 +196,7 @@ class JSONArrayEncoder(json.JSONEncoder):
             pass
 
         if isinstance(obj, np.ndarray):
-            if obj.shape:
-                return obj.ravel().tolist()
-            else:
-                return obj.tolist()
-
+            return obj.ravel().tolist() if obj.shape else obj.tolist()
         return json.JSONEncoder.default(self, obj)
 
 
@@ -265,11 +259,7 @@ def msgpack_encode(obj: Any) -> Any:
         pass
 
     if isinstance(obj, np.ndarray):
-        if obj.shape:
-            return obj.ravel().tolist()
-        else:
-            return obj.tolist()
-
+        return obj.ravel().tolist() if obj.shape else obj.tolist()
     return obj
 
 
@@ -365,10 +355,10 @@ def deserialize(blob: Union[str, bytes], encoding: str) -> Any:
     elif encoding.lower() == "json-ext":
         assert isinstance(blob, (str, bytes))
         return jsonext_loads(blob)
-    elif encoding.lower() in ["msgpack"]:
+    elif encoding.lower() in {"msgpack"}:
         assert isinstance(blob, bytes)
         return msgpack_loads(blob)
-    elif encoding.lower() in ["msgpack-ext"]:
+    elif encoding.lower() in {"msgpack-ext"}:
         assert isinstance(blob, bytes)
         return msgpackext_loads(blob)
     else:

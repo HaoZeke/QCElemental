@@ -291,10 +291,7 @@ def from_string(
     if verbose >= 2:
         print("\nFROM_STRING MOLREC <<<", molrec, ">>>\n")
 
-    if return_processed:
-        return molrec, molinit
-    else:
-        return molrec
+    return (molrec, molinit) if return_processed else molrec
 
 
 # TODO maybe molrec needs a "fix_loose" flag to signal the reciever can symmetrize
@@ -342,7 +339,7 @@ def _filter_pubchem(string):
             msg += "\t Chemical ID     IUPAC Name\n\n"
             ematches = {}
             for result in results:
-                msg += "%s" % (result)
+                msg += f"{result}"
                 ematches[result.cid] = result.iupac
             raise ChoicesError(msg, ematches)
 
@@ -509,7 +506,7 @@ cgmp = re.compile(r"\A" + CHGMULT + r"\Z", re.VERBOSE)
 VAR = r"(-?[a-z][a-z0-9_]*)"  # slight cheat to allow neg in `variable`
 NUCLABEL = r"([A-Z]{1,3}((_\w+)|(\d+))?)"
 ANCHORTO = r"((\d+)|" + NUCLABEL + r")"
-ANCHORVAL = r"(" + NUMBER + r"|" + VAR + ")"
+ANCHORVAL = f"({NUMBER}|{VAR})"
 
 # fmt: off
 atom_cartesian = re.compile(r'\A' + r'(?P<nucleus>' + NUCLEUS + r')' + SEP + CARTXYZ + r'\Z',

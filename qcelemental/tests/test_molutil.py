@@ -44,7 +44,7 @@ H    -0.8103758    2.3643033   -2.0618643
 def test_scramble_descrambles_plain():
     s22_12 = qcel.models.Molecule.from_data(ss22_12)
 
-    for trial in range(5):
+    for _ in range(5):
         s22_12.scramble(do_shift=True, do_rotate=True, do_resort=True, do_plot=False, verbose=0, do_test=True)
 
 
@@ -52,7 +52,7 @@ def test_relative_geoms_align_free(request):
     s22_12 = qcel.models.Molecule.from_data(ss22_12)
     drop_qcsk(s22_12, request.node.name)
 
-    for trial in range(3):
+    for _ in range(3):
         cmol, _ = s22_12.scramble(
             do_shift=True, do_rotate=True, do_resort=False, do_plot=False, verbose=2, do_test=True
         )
@@ -66,7 +66,7 @@ def test_relative_geoms_align_fixed(request):
     s22_12 = qcel.models.Molecule.from_data(ss22_12 + "nocom\nnoreorient\n")
     drop_qcsk(s22_12, request.node.name)
 
-    for trial in range(3):
+    for _ in range(3):
         cmol, _ = s22_12.scramble(
             do_shift=False, do_rotate=False, do_resort=False, do_plot=False, verbose=2, do_test=True
         )
@@ -95,7 +95,7 @@ def test_scramble_descrambles_chiral():
     chiral.scramble(
         do_shift=True, do_rotate=True, do_resort=False, do_plot=False, verbose=1, do_mirror=False, do_test=True
     )
-    for trial in range(5):
+    for _ in range(5):
         chiral.scramble(
             do_shift=True, do_rotate=True, do_resort=True, do_plot=False, verbose=0, do_mirror=True, do_test=True
         )

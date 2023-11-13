@@ -36,11 +36,15 @@ class ElectronShell(ProtoModel):
     )
 
     class Config(ProtoModel.Config):
-        def schema_extra(schema, model):
+        def schema_extra(self, model):
             # edit to allow string storage of basis sets as BSE uses. alternately, could `Union[float, str]` above but that loses some validation
-            schema["properties"]["exponents"]["items"] = {"anyOf": [{"type": "number"}, {"type": "string"}]}
-            schema["properties"]["coefficients"]["items"]["items"] = {"anyOf": [{"type": "number"}, {"type": "string"}]}
-            schema["properties"]["angular_momentum"].update({"uniqueItems": True})
+            self["properties"]["exponents"]["items"] = {
+                "anyOf": [{"type": "number"}, {"type": "string"}]
+            }
+            self["properties"]["coefficients"]["items"]["items"] = {
+                "anyOf": [{"type": "number"}, {"type": "string"}]
+            }
+            self["properties"]["angular_momentum"].update({"uniqueItems": True})
 
     @validator("coefficients")
     def _check_coefficient_length(cls, v, values):
@@ -110,11 +114,15 @@ class ECPPotential(ProtoModel):
     )
 
     class Config(ProtoModel.Config):
-        def schema_extra(schema, model):
+        def schema_extra(self, model):
             # edit to allow string storage of basis sets as BSE uses. alternately, could `Union[float, str]` above but that loses some validation
-            schema["properties"]["gaussian_exponents"]["items"] = {"anyOf": [{"type": "number"}, {"type": "string"}]}
-            schema["properties"]["coefficients"]["items"]["items"] = {"anyOf": [{"type": "number"}, {"type": "string"}]}
-            schema["properties"]["angular_momentum"].update({"uniqueItems": True})
+            self["properties"]["gaussian_exponents"]["items"] = {
+                "anyOf": [{"type": "number"}, {"type": "string"}]
+            }
+            self["properties"]["coefficients"]["items"]["items"] = {
+                "anyOf": [{"type": "number"}, {"type": "string"}]
+            }
+            self["properties"]["angular_momentum"].update({"uniqueItems": True})
 
     @validator("gaussian_exponents")
     def _check_gaussian_exponents_length(cls, v, values):
@@ -144,9 +152,9 @@ class BasisCenter(ProtoModel):
     )
 
     class Config(ProtoModel.Config):
-        def schema_extra(schema, model):
-            schema["properties"]["electron_shells"].update({"uniqueItems": True})
-            schema["properties"]["ecp_potentials"].update({"uniqueItems": True})
+        def schema_extra(self, model):
+            self["properties"]["electron_shells"].update({"uniqueItems": True})
+            self["properties"]["ecp_potentials"].update({"uniqueItems": True})
 
 
 class BasisSet(ProtoModel):
@@ -175,8 +183,8 @@ class BasisSet(ProtoModel):
     nbf: Optional[int] = Field(None, description="The number of basis functions. Use for convenience or as checksum")
 
     class Config(ProtoModel.Config):
-        def schema_extra(schema, model):
-            schema["$schema"] = qcschema_draft
+        def schema_extra(self, model):
+            self["$schema"] = qcschema_draft
 
     @validator("atom_map")
     def _check_atom_map(cls, v, values):
@@ -203,9 +211,8 @@ class BasisSet(ProtoModel):
 
         if v is None:
             v = nbf
-        else:
-            if v != nbf:
-                raise ValidationError("Calculated nbf does not match supplied nbf.")
+        elif v != nbf:
+            raise ValidationError("Calculated nbf does not match supplied nbf.")
 
         return v
 
@@ -220,12 +227,8 @@ class BasisSet(ProtoModel):
             The number of basis functions.
         """
 
-        center_count = {}
-        for k, center in center_data.items():
-            center_count[k] = sum(x.nfunctions() for x in center.electron_shells)
-
-        ret = 0
-        for center in atom_map:
-            ret += center_count[center]
-
-        return ret
+        center_count = {
+            k: sum(x.nfunctions() for x in center.electron_shells)
+            for k, center in center_data.items()
+        }
+        return sum(center_count[center] for center in atom_map)

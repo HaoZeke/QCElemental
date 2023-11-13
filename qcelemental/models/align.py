@@ -53,18 +53,20 @@ class AlignmentMill(ProtoModel):
 
     def pretty_print(self, label: str = "") -> str:
         width = 40
-        text = []
-        text.append("-" * width)
-        text.append("{:^{width}}".format("AlignmentMill", width=width))
+        text = ["-" * width, "{:^{width}}".format("AlignmentMill", width=width)]
         if label:
             text.append("{:^{width}}".format(label, width=width))
-        text.append("-" * width)
-        text.append("Mirror:   {}".format(self.mirror))
-        text.append("Atom Map: {}".format(self.atommap))
-        text.append("Shift:    {}".format(self.shift))
-        text.append("Rotation:")
-        text.append("{}".format(self.rotation))
-        text.append("-" * width)
+        text.extend(
+            (
+                "-" * width,
+                f"Mirror:   {self.mirror}",
+                f"Atom Map: {self.atommap}",
+                f"Shift:    {self.shift}",
+                "Rotation:",
+                f"{self.rotation}",
+                "-" * width,
+            )
+        )
         return "\n".join(x.rstrip() for x in text)
 
     def align_coordinates(self, geom, *, reverse=False) -> Array:

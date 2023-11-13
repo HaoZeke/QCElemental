@@ -252,7 +252,7 @@ class AtomicResultProperties(ProtoModel):
         force_skip_defaults = True
 
     def __repr_args__(self) -> "ReprArgs":
-        return [(k, v) for k, v in self.dict().items()]
+        return list(self.dict().items())
 
     @validator(
         "scf_dipole_moment",
@@ -285,7 +285,7 @@ class AtomicResultProperties(ProtoModel):
 
         nat = values.get("calcinfo_natom", None)
         if nat is None:
-            raise ValueError(f"Please also set ``calcinfo_natom``!")
+            raise ValueError("Please also set ``calcinfo_natom``!")
 
         if field.name.endswith("_gradient"):
             shape = (nat, 3)
@@ -595,8 +595,8 @@ class AtomicInput(ProtoModel):
     )
 
     class Config(ProtoModel.Config):
-        def schema_extra(schema, model):
-            schema["$schema"] = qcschema_draft
+        def schema_extra(self, model):
+            self["$schema"] = qcschema_draft
 
     def __repr_args__(self) -> "ReprArgs":
         return [
@@ -708,22 +708,21 @@ class AtomicResult(AtomicInput):
         else:
             raise ValueError(f"Protocol `wavefunction:{wfnp}` is not understood.")
 
-        if return_keep is not None:
-            ret_wfn = {"restricted": restricted}
-            if "basis" in wfn:
-                ret_wfn["basis"] = wfn["basis"]
-
-            for rk in return_keep:
-                key = wfn.get(rk, None)
-                if key is None:
-                    continue
-
-                ret_wfn[rk] = key
-                ret_wfn[key] = wfn[key]
-
-            return ret_wfn
-        else:
+        if return_keep is None:
             return wfn
+        ret_wfn = {"restricted": restricted}
+        if "basis" in wfn:
+            ret_wfn["basis"] = wfn["basis"]
+
+        for rk in return_keep:
+            key = wfn.get(rk, None)
+            if key is None:
+                continue
+
+            ret_wfn[rk] = key
+            ret_wfn[key] = wfn[key]
+
+        return ret_wfn
 
     @validator("stdout")
     def _stdout_protocol(cls, value, values):
@@ -748,17 +747,11 @@ class AtomicResult(AtomicInput):
             return {}
         elif ancp == "input":
             return_keep = ["input"]
-            if value is None:
-                files = {}
-            else:
-                files = value.copy()
+            files = {} if value is None else value.copy()
         else:
             raise ValueError(f"Protocol `native_files:{ancp}` is not understood")
 
-        ret = {}
-        for rk in return_keep:
-            ret[rk] = files.get(rk, None)
-        return ret
+        return {rk: files.get(rk, None) for rk in return_keep}
 
 
 class ResultProperties(AtomicResultProperties):
