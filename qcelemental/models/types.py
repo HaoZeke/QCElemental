@@ -13,7 +13,7 @@ class TypedArray(np.ndarray):
         try:
             v = np.asarray(v, dtype=cls._dtype)
         except ValueError:
-            raise ValueError("Could not cast {} to NumPy Array!".format(v))
+            raise ValueError(f"Could not cast {v} to NumPy Array!")
 
         return v
 

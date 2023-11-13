@@ -40,7 +40,7 @@ def _assert_inverse_conversion(expected, converted):
 
     # Expected to a relative tolerance as the number of digits plus one for rounding
     # Using float comparisons as we are taking an (1 / float) inverse in the conversion code
-    rel_tol = float("10e-{}".format(len(expected.as_tuple().digits)))
+    rel_tol = float(f"10e-{len(expected.as_tuple().digits)}")
     assert pytest.approx(float(inv_expected), rel_tol) == float(to_from_value)
 
 

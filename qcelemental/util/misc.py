@@ -46,7 +46,9 @@ def update_with_error(a: Dict, b: Dict, path=None) -> Dict:
             ):  # yapf: disable
                 a[key] = b[key]
             else:
-                raise KeyError("Conflict at {}: {} vs. {}".format(".".join(path + [str(key)]), a[key], b[key]))
+                raise KeyError(
+                    f'Conflict at {".".join(path + [str(key)])}: {a[key]} vs. {b[key]}'
+                )
         else:
             a[key] = b[key]
     return a
@@ -68,11 +70,7 @@ def standardize_efp_angles_units(units: str, geom_hints: List[List[float]]) -> L
         else:
             return radang
 
-    if units == "Angstrom":
-        iutau = 1.0 / constants.bohr2angstroms
-    else:
-        iutau = 1.0
-
+    iutau = 1.0 / constants.bohr2angstroms if units == "Angstrom" else 1.0
     hints = []
     for hint in geom_hints:
         if len(hint) == 6:
@@ -118,7 +116,7 @@ def unnp(dicary: Dict, _path=None, *, flat: bool = False) -> Dict:
             ndicary[k] = unnp(v, _path + [str(k)], flat=flat)
         elif isinstance(v, list):
             # relying on Py3.6+ ordered dict here
-            fakedict = {kk: vv for kk, vv in enumerate(v)}
+            fakedict = dict(enumerate(v))
             tolisted = unnp(fakedict, _path + [str(k)], flat=flat)
             ndicary[k] = list(tolisted.values())
         else:
@@ -127,10 +125,7 @@ def unnp(dicary: Dict, _path=None, *, flat: bool = False) -> Dict:
             except AttributeError:
                 ndicary[k] = v
             else:
-                if flat:
-                    ndicary[k] = v.ravel().tolist()
-                else:
-                    ndicary[k] = v.tolist()
+                ndicary[k] = v.ravel().tolist() if flat else v.tolist()
     return ndicary
 
 
@@ -177,10 +172,7 @@ def measure_coordinates(coordinates, measurements, degrees=False):
         val = func(*[coordinates[x] for x in m], **kwargs)
         ret.append(val[0])
 
-    if single:
-        return ret[0]
-    else:
-        return ret
+    return ret[0] if single else ret
 
 
 def compute_distance(points1, points2) -> np.ndarray:
@@ -253,10 +245,7 @@ def compute_angle(points1, points2, points3, *, degrees: bool = False) -> np.nda
 
     angle = np.pi - np.arccos(cosine_angle)
 
-    if degrees:
-        return np.degrees(angle)
-    else:
-        return angle
+    return np.degrees(angle) if degrees else angle
 
 
 def compute_dihedral(points1, points2, points3, points4, *, degrees: bool = False) -> np.ndarray:
@@ -314,7 +303,4 @@ def compute_dihedral(points1, points2, points3, points4, *, degrees: bool = Fals
     y = np.einsum("ij,ij->i", np.cross(v2, v), w)
     angle = np.arctan2(y, x)
 
-    if degrees:
-        return np.degrees(angle)
-    else:
-        return angle
+    return np.degrees(angle) if degrees else angle

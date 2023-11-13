@@ -56,7 +56,7 @@ def to_schema(
     if dtype == "psi4":
         if units not in ["Angstrom", "Bohr"]:
             raise ValidationError(
-                """Psi4 Schema {} allows only 'Bohr'/'Angstrom' coordinates, not {}.""".format(dtype, units)
+                f"""Psi4 Schema {dtype} allows only 'Bohr'/'Angstrom' coordinates, not {units}."""
             )
         qcschema = deepcopy(molrec)
         qcschema["geom"] = geom
@@ -65,11 +65,14 @@ def to_schema(
 
     elif dtype in [1, 2]:
         if units != "Bohr":
-            raise ValidationError("""QCSchema {} allows only 'Bohr' coordinates, not {}.""".format(dtype, units))
+            raise ValidationError(
+                f"""QCSchema {dtype} allows only 'Bohr' coordinates, not {units}."""
+            )
 
-        molecule: Dict = {}
-        molecule["validated"] = True
-        molecule["symbols"] = np.array(molrec["elem"], copy=copy)
+        molecule: Dict = {
+            "validated": True,
+            "symbols": np.array(molrec["elem"], copy=copy),
+        }
         molecule["geometry"] = geom
         molecule["masses"] = np.array(molrec["mass"], copy=copy)
         molecule["atomic_numbers"] = np.array(molrec["elez"], copy=copy)

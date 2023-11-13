@@ -3,8 +3,6 @@ import json
 import black
 import psi4
 
-dft_info = {"version": psi4.__version__, "functionals": {}}
-
 empirical_dispersion_suffixes = {
     "-nl",
     "-d",
@@ -27,15 +25,17 @@ empirical_dispersion_suffixes = {
     "-atmgr",
     "-dmp2",
 }
-dft_info["empirical_dispersion_suffixes"] = list(empirical_dispersion_suffixes)
-
+dft_info = {
+    "version": psi4.__version__,
+    "functionals": {},
+    "empirical_dispersion_suffixes": list(empirical_dispersion_suffixes),
+}
 for functional in psi4.driver.proc.dft.functionals:
     if any(functional.endswith(suffix) for suffix in empirical_dispersion_suffixes):
         continue
 
     a = psi4.driver.proc.dft.build_superfunctional(functional, False)[0]
-    info = {}
-    info["ansatz"] = a.ansatz()
+    info = {"ansatz": a.ansatz()}
     info["c_hybrid"] = a.is_c_hybrid()
     info["x_hybrid"] = a.is_x_hybrid()
     info["c_lrc"] = a.is_c_lrc()

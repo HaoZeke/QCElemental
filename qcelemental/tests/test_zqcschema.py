@@ -13,7 +13,7 @@ def qcschema_models():
 
 
 files = sorted(_data_path.rglob("*.json"))
-ids = [fl.parent.stem + "_" + fl.stem[5:] for fl in files]
+ids = [f"{fl.parent.stem}_{fl.stem[5:]}" for fl in files]
 
 
 @pytest.mark.parametrize("fl", files, ids=ids)

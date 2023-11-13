@@ -84,9 +84,9 @@ def blockwise_expand(a, blockshape, aslist=False, require_aligned_blocks=True):
     view_shape = outershape + blockshape
 
     if require_aligned_blocks:
-        assert (np.mod(a.shape, blockshape) == 0).all(), "blockshape {} must divide evenly into array shape {}".format(
-            blockshape, a.shape
-        )
+        assert (
+            np.mod(a.shape, blockshape) == 0
+        ).all(), f"blockshape {blockshape} must divide evenly into array shape {a.shape}"
 
     # inner strides: strides within each block (same as original array)
     intra_block_strides = a.strides
@@ -98,6 +98,4 @@ def blockwise_expand(a, blockshape, aslist=False, require_aligned_blocks=True):
     # Generate a view with our new strides (outer+inner).
     view = np.lib.stride_tricks.as_strided(a, shape=view_shape, strides=(inter_block_strides + intra_block_strides))
 
-    if aslist:
-        return list(map(view.__getitem__, np.ndindex(outershape)))
-    return view
+    return list(map(view.__getitem__, np.ndindex(outershape))) if aslist else view

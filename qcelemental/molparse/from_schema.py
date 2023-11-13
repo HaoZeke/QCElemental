@@ -35,9 +35,7 @@ def from_schema(molschema: Dict, *, nonphysical: bool = False, verbose: int = 1)
         ms = molschema
     else:
         raise ValidationError(
-            """Schema not recognized, schema_name/schema_version: {}/{} """.format(
-                molschema.get("schema_name", "(none)"), molschema.get("schema_version", "(none)")
-            )
+            f"""Schema not recognized, schema_name/schema_version: {molschema.get("schema_name", "(none)")}/{molschema.get("schema_version", "(none)")} """
         )
 
     if "fragments" in ms:
@@ -150,8 +148,8 @@ def contiguize_from_fragment_pattern(
     if (len(fragment_separators) == 0) and np.all(np.diff(frag_pattern[0]) == 1):
         returns = {"fragment_separators": fragment_separators}
         if geom is not None:
-            returns.update({"geom": geom.copy()})
-        extras = {k: v for k, v in kwargs.items()}
+            returns["geom"] = geom.copy()
+        extras = dict(kwargs)
         returns.update(extras)
 
         ncgeom = np.asarray(geom).reshape(-1, 3)
@@ -187,7 +185,7 @@ def contiguize_from_fragment_pattern(
 
     returns = {"fragment_separators": fragment_separators}
     if geom is not None:
-        returns.update({"geom": geom})
+        returns["geom"] = geom
     extras = {k: (None if v is None else reorder(v)) for k, v in kwargs.items()}
     returns.update(extras)
 

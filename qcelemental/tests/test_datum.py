@@ -14,17 +14,27 @@ from qcelemental.testing import compare_recursive, compare_values
 
 @pytest.fixture
 def dataset():
-    datums = {
+    return {
         "decimal": qcel.Datum(
-            "a label", "mdyn/angstrom", Decimal("4.4"), comment="force constant", doi="10.1000/182", numeric=False
+            "a label",
+            "mdyn/angstrom",
+            Decimal("4.4"),
+            comment="force constant",
+            doi="10.1000/182",
+            numeric=False,
         ),
-        "ndarray": qcel.Datum("an array", "cm^-1", np.arange(4, dtype=float) * 4 / 3, comment="freqs"),
+        "ndarray": qcel.Datum(
+            "an array",
+            "cm^-1",
+            np.arange(4, dtype=float) * 4 / 3,
+            comment="freqs",
+        ),
         "float": qcel.Datum("a float", "kg", 4.4, doi="10.1000/182"),
         "string": qcel.Datum("ze lbl", "ze unit", "ze data", numeric=False),
-        "lststr": qcel.Datum("ze lbl", "ze unit", ["V", "R", None], numeric=False),
+        "lststr": qcel.Datum(
+            "ze lbl", "ze unit", ["V", "R", None], numeric=False
+        ),
     }
-
-    return datums
 
 
 def test_creation(dataset):

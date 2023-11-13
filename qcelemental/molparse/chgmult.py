@@ -12,10 +12,7 @@ def _apply_default(llist, default):
 
 
 def _high_spin_sum(mult_list):
-    mm = 1
-    for m in mult_list:
-        mm += m - 1
-    return mm
+    return 1 + sum(m - 1 for m in mult_list)
 
 
 def _mult_ok(m):
@@ -313,7 +310,9 @@ def validate_and_fill_chgmult(
     cgmp_range = []  # tests that the final value must pass to be valid
     cgmp_rules = []  # key to what rules in cgmp_range are T/F
 
-    real_fragments = np.array([not all(f == 0 for f in felez[ifr]) for ifr in range(nfr)])
+    real_fragments = np.array(
+        [any(f != 0 for f in felez[ifr]) for ifr in range(nfr)]
+    )
     all_fc_known = all(f is not None for f in fragment_charges)
     all_fm_known = all(f is not None for f in fragment_multiplicities)
     if log_full:
@@ -362,14 +361,14 @@ def validate_and_fill_chgmult(
         cgmp_range.append(
             lambda c, fc, m, fm, ifr=ifr: _sufficient_electrons_for_mult(fzel[ifr], fc[ifr], fm[ifr])  # type: ignore
         )
-        cgmp_rules.append("4-" + str(ifr))
+        cgmp_rules.append(f"4-{str(ifr)}")
 
     #   * (R5) require total parity consistent among neutral_electrons, chg, and mult
     cgmp_range.append(lambda c, fc, m, fm: _parity_ok(zel, c, m))
     cgmp_rules.append("5")
     for ifr in range(nfr):
         cgmp_range.append(lambda c, fc, m, fm, ifr=ifr: _parity_ok(fzel[ifr], fc[ifr], fm[ifr]))  # type: ignore
-        cgmp_rules.append("5-" + str(ifr))
+        cgmp_rules.append(f"5-{str(ifr)}")
 
     # <<< (R6, R7, S1) assert & suggest input values
 
@@ -381,7 +380,7 @@ def validate_and_fill_chgmult(
         if chg is not None:
             cgmp_exact_fc[ifr].append(chg)
             cgmp_range.append(lambda c, fc, m, fm, ifr=ifr, chg=chg: fc[ifr] == chg)  # type: ignore
-            cgmp_rules.append("6-" + str(ifr))
+            cgmp_rules.append(f"6-{str(ifr)}")
     if molecular_multiplicity is not None:
         cgmp_exact_m.append(molecular_multiplicity)
         cgmp_range.append(lambda c, fc, m, fm: m == molecular_multiplicity)
@@ -390,7 +389,7 @@ def validate_and_fill_chgmult(
         if mult is not None:
             cgmp_exact_fm[ifr].append(mult)
             cgmp_range.append(lambda c, fc, m, fm, ifr=ifr, mult=mult: fm[ifr] == mult)  # type: ignore
-            cgmp_rules.append("7-" + str(ifr))
+            cgmp_rules.append(f"7-{str(ifr)}")
 
     # <<< assert high-spin-rule and suggest "missing quantity" and default values
 
@@ -446,7 +445,7 @@ def validate_and_fill_chgmult(
     for ifr in range(nfr):
         if all(f == 0 for f in felez[ifr]):
             cgmp_range.append(lambda c, fc, m, fm, ifr=ifr: fc[ifr] == 0 and fm[ifr] == 1)  # type: ignore
-            cgmp_rules.append("9-" + str(ifr))
+            cgmp_rules.append(f"9-{str(ifr)}")
 
     # <<< reconcile and report
 
@@ -492,7 +491,11 @@ def validate_and_fill_chgmult(
 
     def stringify(start, final):
         fcgmp = "{:^4}"
-        return fcgmp.format(final) if final == start else fcgmp.format("(" + str(int(final)) + ")")
+        return (
+            fcgmp.format(final)
+            if final == start
+            else fcgmp.format(f"({int(final)})")
+        )
 
     # TODO could winnow down the exact_* lists a bit by ruling out
     #      independent values. do this if many-frag molecular systems take too
@@ -507,8 +510,16 @@ def validate_and_fill_chgmult(
 
     brief = []
     if log_brief:
-        brief.append("    {:26} {}".format("      charge = " + c_text, "fragments = " + fc_text))
-        brief.append("    {:26} {}".format("multiplicity = " + m_text, "fragments = " + fm_text))
+        brief.append(
+            "    {:26} {}".format(
+                f"      charge = {c_text}", f"fragments = {fc_text}"
+            )
+        )
+        brief.append(
+            "    {:26} {}".format(
+                f"multiplicity = {m_text}", f"fragments = {fm_text}"
+            )
+        )
 
     been_defaulted = []
     if c_text.count("(") + fc_text.count("(") > 1:

@@ -74,8 +74,8 @@ def test_pubchem_4a():
 
     with xfail_on_pubchem_busy():
         final, intermed = qcelemental.molparse.from_string(subject, return_processed=True)
-    assert compare_molrecs(ans4, intermed, tnm() + ": intermediate")
-    assert compare_molrecs(fullans, final["qm"], tnm() + ": full")
+    assert compare_molrecs(ans4, intermed, f"{tnm()}: intermediate")
+    assert compare_molrecs(fullans, final["qm"], f"{tnm()}: full")
 
 
 @using_web
@@ -101,8 +101,8 @@ pubchem  : 241
 
     with xfail_on_pubchem_busy():
         final, intermed = qcelemental.molparse.from_string(subject, return_processed=True, name="benzene", verbose=2)
-    assert compare_molrecs(ans, intermed, tnm() + ": intermediate")
-    assert compare_molrecs(fullans, final["qm"], tnm() + ": full")
+    assert compare_molrecs(ans, intermed, f"{tnm()}: intermediate")
+    assert compare_molrecs(fullans, final["qm"], f"{tnm()}: full")
 
 
 @using_web
@@ -218,8 +218,8 @@ def test_pubchem_13h():
 
     with xfail_on_pubchem_busy():
         final, intermed = qcelemental.molparse.from_string(subject, return_processed=True)
-    assert compare_molrecs(ans13, intermed, tnm() + ": intermediate")
-    assert compare_molrecs(fullans, final["qm"], tnm() + ": full")
+    assert compare_molrecs(ans13, intermed, f"{tnm()}: intermediate")
+    assert compare_molrecs(fullans, final["qm"], f"{tnm()}: full")
 
 
 @using_web
@@ -230,5 +230,5 @@ def test_pubchem_13i():
 
     with xfail_on_pubchem_busy():
         final, intermed = qcelemental.molparse.from_string(subject, return_processed=True)
-    assert compare_molrecs(ans13, intermed, tnm() + ": intermediate")
-    assert compare_molrecs(fullans, final["qm"], tnm() + ": full")
+    assert compare_molrecs(ans13, intermed, f"{tnm()}: intermediate")
+    assert compare_molrecs(fullans, final["qm"], f"{tnm()}: full")

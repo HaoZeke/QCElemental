@@ -41,9 +41,7 @@ class PubChemObj:
         from urllib.request import Request, urlopen
 
         if len(self.dataSDF) == 0:
-            url = "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/{}/SDF?record_type=3d".format(
-                quote(str(self.cid))
-            )
+            url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/{quote(str(self.cid))}/SDF?record_type=3d"
             req = Request(url, headers={"Accept": "chemical/x-mdl-sdfile"})
             try:
                 self.dataSDF = urlopen(req).read().decode("utf-8")
@@ -93,8 +91,7 @@ class PubChemObj:
 
         atom_count = 0
         for line in lines:
-            atom_match = atom_re.match(line)
-            if atom_match:
+            if atom_match := atom_re.match(line):
                 x = float(atom_match.group(1))
                 y = float(atom_match.group(2))
                 z = float(atom_match.group(3))
@@ -129,10 +126,8 @@ def get_pubchem_results(name):
     from urllib.request import urlopen
 
     if name.isdigit():
-        print("\tSearching PubChem database for CID {}".format(name))
-        url = "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/{}/property/IUPACName,MolecularFormula,Charge/JSON".format(
-            quote(name)
-        )
+        print(f"\tSearching PubChem database for CID {name}")
+        url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/{quote(name)}/property/IUPACName,MolecularFormula,Charge/JSON"
 
     else:
         if name.endswith("*"):
@@ -141,13 +136,9 @@ def get_pubchem_results(name):
         else:
             loose = False
         print(
-            "\tSearching PubChem database for {} ({} returned)".format(
-                name, "all matches" if loose else "single best match"
-            )
+            f'\tSearching PubChem database for {name} ({"all matches" if loose else "single best match"} returned)'
         )
-        url = "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{}/property/IUPACName,MolecularFormula,Charge/JSON?name_type={}".format(
-            quote(name), "word" if loose else "complete"
-        )
+        url = f'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{quote(name)}/property/IUPACName,MolecularFormula,Charge/JSON?name_type={"word" if loose else "complete"}'
 
     try:
         response = urlopen(url)
@@ -165,7 +156,7 @@ def get_pubchem_results(name):
         pubobj = PubChemObj(d["CID"], d["IUPACName"], d["IUPACName"], d["Charge"])
         results.append(pubobj)
 
-    print("\tFound {} result(s)".format(len(results)))
+    print(f"\tFound {len(results)} result(s)")
     return results
 
 

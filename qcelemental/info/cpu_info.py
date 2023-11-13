@@ -89,14 +89,13 @@ class ProcessorContext:
         self.name = context
 
     def __str__(self) -> str:
-        return "ProcessorContext(context='{}')".format(self.name)
+        return f"ProcessorContext(context='{self.name}')"
 
     def process_names(self, name):
         name = name.lower()
         name = name.replace("(tm)", "").replace("(r)", "").replace("™", "")
         name = " ".join(name.split())
-        name = name.strip()
-        return name
+        return name.strip()
 
 
 context = ProcessorContext("default")
@@ -135,9 +134,7 @@ def get(name: str, vendor=None, cutoff=0.9) -> ProcessorInfo:
     index = context.index_vendor[vendor]
 
     name = context.process_names(name)
-    matches = difflib.get_close_matches(name, index.keys(), cutoff=cutoff)
-
-    if matches:
+    if matches := difflib.get_close_matches(name, index.keys(), cutoff=cutoff):
         return index[matches[0]]
     else:
         raise KeyError(f"Could not find processor {vendor}: {name}.")

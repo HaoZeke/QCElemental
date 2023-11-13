@@ -216,7 +216,7 @@ def test_to_from_file_simple(tmp_path, dtype, filext):
     """
     )
 
-    p = tmp_path / ("water." + filext)
+    p = tmp_path / f"water.{filext}"
     benchmol.to_file(p, dtype=dtype)
 
     mol = Molecule.from_file(p)
@@ -226,7 +226,7 @@ def test_to_from_file_simple(tmp_path, dtype, filext):
 
 @pytest.mark.parametrize("dtype", ["json", "psi4"])
 def test_to_from_file_complex(tmp_path, dtype):
-    p = tmp_path / ("water." + dtype)
+    p = tmp_path / f"water.{dtype}"
     water_dimer_minima.to_file(p)
 
     mol = Molecule.from_file(p)
@@ -246,7 +246,7 @@ def test_to_from_file_charge_spin(tmp_path, dtype, filext):
     """
     )
 
-    p = tmp_path / ("water." + filext)
+    p = tmp_path / f"water.{filext}"
     benchmol.to_file(p, dtype=dtype)
 
     mol = Molecule.from_file(p, dtype=dtype)

@@ -154,11 +154,7 @@ def parse_instructions(inst):
     if inst is None:
         return None
 
-    for i in ["AVX-512", "AVX2", "AVX", "SSE"]:
-        if i in inst:
-            return i
-
-    return None
+    return next((i for i in ["AVX-512", "AVX2", "AVX", "SSE"] if i in inst), None)
 
 
 def parse_date(d):
@@ -240,7 +236,7 @@ df.sort_values(["vendor", "model", "launch_date"], inplace=True)
 df.drop_duplicates(subset=["vendor", "model"], keep="last", inplace=True)
 
 
-output = f'''
+output = '''
 """
 Processor data from multiple sources and vendors.
 

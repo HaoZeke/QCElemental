@@ -84,7 +84,7 @@ def build_units_registry(context):
     for k, v in phys_const_map.items():
         ureg.define(f"{k} = {phys_const[v]['value']} * {phys_const[v]['unit']}")
 
-    ureg.define(f"au_pressure = au_energy / au_length**3")  # not in CODATA
+    ureg.define("au_pressure = au_energy / au_length**3")
 
     # Define relationships
     _const_rename = {
@@ -99,7 +99,7 @@ def build_units_registry(context):
         # Automatically builds the following:
         # electron_volt_to_kelvin = 1.16045221e4 / electron_volt * kelvin
         # hartree_to_atomic_mass_unit = 2.9212623197e-8 / hartree * atomic_mass_unit
-        if not (("-" in k) and ("relationship" in k)):
+        if "-" not in k or "relationship" not in k:
             continue
 
         # Rename where needed
@@ -112,19 +112,11 @@ def build_units_registry(context):
 
         # Inverse is a special case
 
-        if "inverse_meter" == left_unit:
-            ratio1 = "* meter"
-        else:
-            ratio1 = "/ " + left_unit
-
-        if "inverse_meter" == right_unit:
-            ratio2 = "/ meter"
-        else:
-            ratio2 = "* " + right_unit
-
+        ratio1 = "* meter" if "inverse_meter" == left_unit else f"/ {left_unit}"
+        ratio2 = "/ meter" if "inverse_meter" == right_unit else f"* {right_unit}"
         definition = "{}_to_{} = {} {} {}".format(left_unit, right_unit, v["value"], ratio1, ratio2)
         ureg.define(definition)
-        # print(definition)
+            # print(definition)
 
     # Add contexts
 

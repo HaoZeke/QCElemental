@@ -26,10 +26,7 @@ def _handle_return(passfail: bool, label: str, message: str, return_message: boo
             logging.error(f"    {label:.<53}FAILED")
             logging.error(f"    {message:.<53}")
 
-    if return_message:
-        return passfail, message
-    else:
-        return passfail
+    return (passfail, message) if return_message else passfail
 
 
 def tnm() -> str:
@@ -113,11 +110,7 @@ def compare_values(
         if expected is None and computed is None:
             return return_handler(True, label, pass_message, return_message, quiet)
 
-    if np.iscomplexobj(expected):
-        dtype = np.complex
-    else:
-        dtype = float
-
+    dtype = np.complex if np.iscomplexobj(expected) else float
     try:
         xptd, cptd = np.array(expected, dtype=dtype), np.array(computed, dtype=dtype)
     except Exception:
@@ -154,32 +147,28 @@ def compare_values(
             xptd_str = f"{float(xptd):.{digits1}f}"
         else:
             xptd_str = np.array_str(xptd, max_line_width=120, precision=12, suppress_small=True)
-            xptd_str = "\n".join("    " + ln for ln in xptd_str.splitlines())
+            xptd_str = "\n".join(f"    {ln}" for ln in xptd_str.splitlines())
 
         if cptd.shape == ():
             cptd_str = f"{float(cptd):.{digits1}f}"
         else:
             cptd_str = np.array_str(cptd, max_line_width=120, precision=12, suppress_small=True)
-            cptd_str = "\n".join("    " + ln for ln in cptd_str.splitlines())
+            cptd_str = "\n".join(f"    {ln}" for ln in cptd_str.splitlines())
 
         diff = cptd - xptd
         if xptd.shape == ():
             diff_str = f"{float(diff):.{digits1}f}"
-            message = """\t{}: computed value ({}) does not match ({}) {} by difference ({}).""".format(
-                label, cptd_str, xptd_str, digits_str, diff_str
-            )
+            message = f"""\t{label}: computed value ({cptd_str}) does not match ({xptd_str}) {digits_str} by difference ({diff_str})."""
         else:
             diff[isclose] = 0.0
             diff_str = np.array_str(diff, max_line_width=120, precision=12, suppress_small=False)
-            diff_str = "\n".join("    " + ln for ln in diff_str.splitlines())
+            diff_str = "\n".join(f"    {ln}" for ln in diff_str.splitlines())
             with np.errstate(divide="ignore", invalid="ignore"):
                 diffrel = np.divide(diff, xptd)
             np.nan_to_num(diffrel, copy=False)
             diffraw = cptd - xptd
             digits_str += f" (o-e: RMS {_rms(diffraw):.1e}, MAX {np.amax(np.absolute(diffraw)):.1e}, RMAX {np.amax(np.absolute(diffrel)):.1e})"
-            message = """\t{}: computed value does not match {}.\n  Expected:\n{}\n  Observed:\n{}\n  Difference (passed elements are zeroed):\n{}\n""".format(
-                label, digits_str, xptd_str, cptd_str, diff_str
-            )
+            message = f"""\t{label}: computed value does not match {digits_str}.\n  Expected:\n{xptd_str}\n  Observed:\n{cptd_str}\n  Difference (passed elements are zeroed):\n{diff_str}\n"""
 
     return return_handler(allclose, label, message, return_message, quiet)
 
@@ -275,13 +264,13 @@ def compare(
             xptd_str = f"{xptd}"
         else:
             xptd_str = np.array_str(xptd, max_line_width=120, precision=12, suppress_small=True)
-            xptd_str = "\n".join("    " + ln for ln in xptd_str.splitlines())
+            xptd_str = "\n".join(f"    {ln}" for ln in xptd_str.splitlines())
 
         if cptd.shape == ():
             cptd_str = f"{cptd}"
         else:
             cptd_str = np.array_str(cptd, max_line_width=120, precision=12, suppress_small=True)
-            cptd_str = "\n".join("    " + ln for ln in cptd_str.splitlines())
+            cptd_str = "\n".join(f"    {ln}" for ln in cptd_str.splitlines())
 
         try:
             diff = cptd - xptd
@@ -292,16 +281,12 @@ def compare(
                 diff_str = f"{diff}"
             else:
                 diff_str = np.array_str(diff, max_line_width=120, precision=12, suppress_small=False)
-                diff_str = "\n".join("    " + ln for ln in diff_str.splitlines())
+                diff_str = "\n".join(f"    {ln}" for ln in diff_str.splitlines())
 
         if xptd.shape == ():
-            message = """\t{}: computed value ({}) does not match ({}) by difference ({}).""".format(
-                label, cptd_str, xptd_str, diff_str
-            )
+            message = f"""\t{label}: computed value ({cptd_str}) does not match ({xptd_str}) by difference ({diff_str})."""
         else:
-            message = """\t{}: computed value does not match.\n  Expected:\n{}\n  Observed:\n{}\n  Difference:\n{}\n""".format(
-                label, xptd_str, cptd_str, diff_str
-            )
+            message = f"""\t{label}: computed value does not match.\n  Expected:\n{xptd_str}\n  Observed:\n{cptd_str}\n  Difference:\n{diff_str}\n"""
 
     return return_handler(allclose, label, message, return_message, quiet)
 
@@ -309,7 +294,7 @@ def compare(
 def _compare_recursive(expected, computed, atol, rtol, _prefix=False, equal_phase=False):
     errors = []
     name = _prefix or "root"
-    prefix = name + "."
+    prefix = f"{name}."
 
     # Initial conversions if required
     if isinstance(expected, BaseModel):
@@ -320,7 +305,7 @@ def _compare_recursive(expected, computed, atol, rtol, _prefix=False, equal_phas
 
     if isinstance(expected, (str, int, bool, complex)):
         if expected != computed:
-            errors.append((name, "Value {} did not match {}.".format(expected, computed)))
+            errors.append((name, f"Value {expected} did not match {computed}."))
 
     elif isinstance(expected, (list, tuple)):
         try:
@@ -340,9 +325,9 @@ def _compare_recursive(expected, computed, atol, rtol, _prefix=False, equal_phas
         expected_extra = computed.keys() - expected.keys()
         computed_extra = expected.keys() - computed.keys()
         if len(expected_extra):
-            errors.append((name, "Found extra keys {}".format(expected_extra)))
+            errors.append((name, f"Found extra keys {expected_extra}"))
         if len(computed_extra):
-            errors.append((name, "Missing keys {}".format(computed_extra)))
+            errors.append((name, f"Missing keys {computed_extra}"))
 
         for k in expected.keys() & computed.keys():
             name = prefix + str(k)
@@ -357,7 +342,7 @@ def _compare_recursive(expected, computed, atol, rtol, _prefix=False, equal_phas
             expected, computed, atol=atol, rtol=rtol, equal_phase=equal_phase, return_message=True, quiet=True
         )
         if not passfail:
-            errors.append((name, "Arrays differ." + msg))
+            errors.append((name, f"Arrays differ.{msg}"))
 
     elif isinstance(expected, np.ndarray):
         if np.issubdtype(expected.dtype, np.floating):
@@ -367,7 +352,7 @@ def _compare_recursive(expected, computed, atol, rtol, _prefix=False, equal_phas
         else:
             passfail, msg = compare(expected, computed, equal_phase=equal_phase, return_message=True, quiet=True)
         if not passfail:
-            errors.append((name, "Arrays differ." + msg))
+            errors.append((name, f"Arrays differ.{msg}"))
 
     elif isinstance(expected, type(None)):
         if expected is not computed:
@@ -452,7 +437,10 @@ def compare_recursive(
         elif equal_phase is True:
             equal_phase = list(dict(errors).keys())
         else:
-            equal_phase = [(ep if ep.startswith("root.") else "root." + ep) for ep in equal_phase]
+            equal_phase = [
+                ep if ep.startswith("root.") else f"root.{ep}"
+                for ep in equal_phase
+            ]
         phased = []
 
         for nomatch in sorted(errors):
@@ -465,7 +453,7 @@ def compare_recursive(
     if forgive is None:
         forgive = []
     else:
-        forgive = [(fg if fg.startswith("root.") else "root." + fg) for fg in forgive]
+        forgive = [fg if fg.startswith("root.") else f"root.{fg}" for fg in forgive]
     forgiven = []
 
     for nomatch in sorted(errors):
@@ -483,12 +471,12 @@ def compare_recursive(
 
     message = []
     for e in sorted(errors):
-        message.append(e[0])
-        message.append("    " + e[1])
-
+        message.extend((e[0], f"    {e[1]}"))
     ret_msg_str = "\n".join(message)
 
-    return return_handler(len(ret_msg_str) == 0, label, ret_msg_str, return_message, quiet)
+    return return_handler(
+        not ret_msg_str, label, ret_msg_str, return_message, quiet
+    )
 
 
 def compare_molrecs(

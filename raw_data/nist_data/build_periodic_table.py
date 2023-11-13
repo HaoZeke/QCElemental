@@ -2,6 +2,7 @@
 This file will generate a JSON blob usable by QCElemental for physical constants
 """
 
+
 import datetime
 import json
 import re
@@ -200,8 +201,6 @@ File Authors: QCElemental Authors
     year, title, date_modified, doi, url, access_date
 )
 
-atomic_weights_json = {"title": title, "date": date_modified, "doi": doi, "url": url, "access_data": access_date}
-
 # length number of elements
 Z = [0]  # , 1, 2, ...
 E = ["X"]  # , H, He, ...
@@ -232,25 +231,21 @@ for delem in atomic_weights_data["data"]:
 
     # isotope loop
     for diso in delem["isotopes"]:
-        mobj = re.match(uncertain_value, diso["Relative Atomic Mass"])
-
-        if mobj:
+        if mobj := re.match(uncertain_value, diso["Relative Atomic Mass"]):
             mass = mobj.group("value")
         else:
             raise ValueError(
-                "Trouble parsing mass string ({}) for element ({})".format(
-                    diso["Relative Atomic Mass"], diso["Atomic Symbol"]
-                )
+                f'Trouble parsing mass string ({diso["Relative Atomic Mass"]}) for element ({diso["Atomic Symbol"]})'
             )
 
         a = int(diso["Mass Number"])
 
+        A.append(a)
+        masses.append(mass)
+
         if diso["Atomic Symbol"] in aliases:
             _EE.append("H")
             EA.append(aliases[diso["Atomic Symbol"]])
-            A.append(a)
-            masses.append(mass)
-
             _EE.append("H")
             EA.append(diso["Atomic Symbol"])
             A.append(a)
@@ -259,13 +254,8 @@ for delem in atomic_weights_data["data"]:
         else:
             _EE.append(diso["Atomic Symbol"])
             EA.append(diso["Atomic Symbol"] + diso["Mass Number"])
-            A.append(a)
-            masses.append(mass)
-
         if "Isotopic Composition" in diso:
-            mobj = re.match(uncertain_value, diso["Isotopic Composition"])
-
-            if mobj:
+            if mobj := re.match(uncertain_value, diso["Isotopic Composition"]):
                 if float(mobj.group("value")) > max_isotopic_contribution:
                     mass_of_most_common_isotope = mass
                     mass_number_of_most_common_isotope = a
@@ -289,16 +279,23 @@ for delem in atomic_weights_data["data"]:
     E.append(delem["Atomic Symbol"])
     name.append(element_names[z - 1].capitalize())
 
-atomic_weights_json["Z"] = Z
-atomic_weights_json["E"] = E
-atomic_weights_json["name"] = name
-atomic_weights_json["_EE"] = _EE
-atomic_weights_json["EA"] = EA
-atomic_weights_json["A"] = A
-atomic_weights_json["mass"] = masses
-output += "nist_{}_atomic_weights = {}".format(year, json.dumps(atomic_weights_json))
+atomic_weights_json = {
+    "title": title,
+    "date": date_modified,
+    "doi": doi,
+    "url": url,
+    "access_data": access_date,
+    "Z": Z,
+    "E": E,
+    "name": name,
+    "_EE": _EE,
+    "EA": EA,
+    "A": A,
+    "mass": masses,
+}
+output += f"nist_{year}_atomic_weights = {json.dumps(atomic_weights_json)}"
 
 # output = FormatCode(output)[0]
-fn = "nist_{}_atomic_weights.py".format(year)
+fn = f"nist_{year}_atomic_weights.py"
 with open(fn, "w") as handle:
     handle.write(output)

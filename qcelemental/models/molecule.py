@@ -66,7 +66,7 @@ def float_prep(array, around):
         if array == -0.0:
             array = 0.0
     else:
-        raise TypeError("Type '{}' not recognized".format(type(array).__name__))
+        raise TypeError(f"Type '{type(array).__name__}' not recognized")
 
     return array
 
@@ -320,9 +320,9 @@ class Molecule(ProtoModel):
             "fragment_multiplicities_": "fragment_multiplicities",
         }
 
-        def schema_extra(schema, model):
+        def schema_extra(self, model):
             # below addresses the draft-04 issue until https://github.com/samuelcolvin/pydantic/issues/1478 .
-            schema["$schema"] = qcschema_draft
+            self["$schema"] = qcschema_draft
 
     def __init__(self, orient: bool = False, validate: Optional[bool] = None, **kwargs: Any) -> None:
         r"""Initializes the molecule object from dictionary-like values.
@@ -433,14 +433,14 @@ class Molecule(ProtoModel):
     def real(self) -> Array[bool]:
         real = self.__dict__.get("real_")
         if real is None:
-            real = np.array([True for x in self.symbols])
+            real = np.array([True for _ in self.symbols])
         return real
 
     @property
     def atom_labels(self) -> Array[str]:
         atom_labels = self.__dict__.get("atom_labels_")
         if atom_labels is None:
-            atom_labels = np.array(["" for x in self.symbols])
+            atom_labels = np.array(["" for _ in self.symbols])
         return atom_labels
 
     @property
@@ -459,9 +459,7 @@ class Molecule(ProtoModel):
 
     @property
     def connectivity(self) -> List[Tuple[int, int, float]]:
-        connectivity = self.__dict__.get("connectivity_")
-        # default is None, not []
-        return connectivity
+        return self.__dict__.get("connectivity_")
 
     @property
     def fragments(self) -> List[Array[np.int32]]:
@@ -486,7 +484,7 @@ class Molecule(ProtoModel):
 
     ### Non-Pydantic API functions
 
-    def show(self, ngl_kwargs: Optional[Dict[str, Any]] = None) -> "nglview.NGLWidget":  # type: ignore
+    def show(self, ngl_kwargs: Optional[Dict[str, Any]] = None) -> "nglview.NGLWidget":    # type: ignore
         r"""Creates a 3D representation of a molecule that can be manipulated in Jupyter Notebooks and exported as
         images (`.png`).
 
@@ -503,8 +501,8 @@ class Molecule(ProtoModel):
         """
         if not which_import("nglview", return_bool=True):
             raise ModuleNotFoundError(
-                f"Python module nglwview not found. Solve by installing it: `conda install -c conda-forge nglview`"
-            )  # pragma: no cover
+                "Python module nglwview not found. Solve by installing it: `conda install -c conda-forge nglview`"
+            )
 
         import nglview as nv  # type: ignore
 
@@ -512,8 +510,7 @@ class Molecule(ProtoModel):
             ngl_kwargs = {}
 
         structure = nv.TextStructure(self.to_string("nglview-sdf"), ext="sdf")
-        widget = nv.NGLWidget(structure, **ngl_kwargs)
-        return widget
+        return nv.NGLWidget(structure, **ngl_kwargs)
 
     def measure(
         self, measurements: Union[List[int], List[List[int]]], *, degrees: bool = True
@@ -558,10 +555,8 @@ class Molecule(ProtoModel):
 
         if isinstance(other, dict):
             other = Molecule(orient=False, **other)
-        elif isinstance(other, Molecule):
-            pass
-        else:
-            raise TypeError("Comparison molecule not understood of type '{}'.".format(type(other)))
+        elif not isinstance(other, Molecule):
+            raise TypeError(f"Comparison molecule not understood of type '{type(other)}'.")
 
         return self.get_hash() == other.get_hash()
 
@@ -575,10 +570,11 @@ class Molecule(ProtoModel):
         (method name in libmints is print_in_angstrom)
 
         """
-        text = ""
-
-        text += """    Geometry (in {0:s}), charge = {1:.1f}, multiplicity = {2:d}:\n\n""".format(
-            "Angstrom", self.molecular_charge, self.molecular_multiplicity
+        text = (
+            ""
+            + """    Geometry (in {0:s}), charge = {1:.1f}, multiplicity = {2:d}:\n\n""".format(
+                "Angstrom", self.molecular_charge, self.molecular_multiplicity
+            )
         )
         text += """       Center              X                  Y                   Z       \n"""
         text += """    ------------   -----------------  -----------------  -----------------\n"""
@@ -633,10 +629,8 @@ class Molecule(ProtoModel):
         elif ghost is None:
             ghost = []
 
-        constructor_dict: Dict = {}
-
         ret_name = (self.name if self.name is not None else "") + " (" + str(real) + "," + str(ghost) + ")"
-        constructor_dict["name"] = ret_name
+        constructor_dict: Dict = {"name": ret_name}
         # ret = Molecule(None, name=ret_name)
 
         if len(set(real) & set(ghost)):
@@ -651,8 +645,6 @@ class Molecule(ProtoModel):
         fragments = []
         fragment_charges = []
         fragment_multiplicities = []
-        atom_size = 0
-
         if group_fragments:
             # Loop through the real blocks
             frag_start = 0
@@ -699,6 +691,8 @@ class Molecule(ProtoModel):
                     at2fr[iat] = ifr
 
             at2at: List[Union[int, None]] = [None] * len(self.symbols)
+            atom_size = 0
+
             for iat in range(len(self.symbols)):
                 ifr = at2fr[iat]
 
@@ -779,9 +773,7 @@ class Molecule(ProtoModel):
             data = getattr(self, field)
             if field == "geometry":
                 data = float_prep(data, GEOMETRY_NOISE)
-            elif field == "fragment_charges":
-                data = float_prep(data, CHARGE_NOISE)
-            elif field == "molecular_charge":
+            elif field in ["fragment_charges", "molecular_charge"]:
                 data = float_prep(data, CHARGE_NOISE)
             elif field == "masses":
                 data = float_prep(data, MASS_NOISE)
@@ -906,7 +898,7 @@ class Molecule(ProtoModel):
             assert isinstance(data, dict)
             input_dict = data
         else:
-            raise KeyError("Dtype not understood '{}'.".format(dtype))
+            raise KeyError(f"Dtype not understood '{dtype}'.")
 
         input_dict.update(kwargs)
 
@@ -946,12 +938,7 @@ class Molecule(ProtoModel):
         ext = Path(filename).suffix
 
         if dtype is None:
-            if ext in _extension_map:
-                dtype = _extension_map[ext]
-            else:
-                # Let `from_string` try to sort it
-                dtype = "string"
-
+            dtype = _extension_map[ext] if ext in _extension_map else "string"
         # Raw string type, read and pass through
         if dtype in ["string", "xyz", "xyz+", "psi4"]:
             with open(filename, "r") as infile:
@@ -967,7 +954,7 @@ class Molecule(ProtoModel):
                 data = deserialize(infile_bytes.read(), encoding="msgpack-ext")
             dtype = "dict"
         else:
-            raise KeyError("Dtype not understood '{}'.".format(dtype))
+            raise KeyError(f"Dtype not understood '{dtype}'.")
 
         return cls.from_data(data, dtype, orient=orient, **kwargs)
 
@@ -1063,7 +1050,7 @@ class Molecule(ProtoModel):
         except ModuleNotFoundError:
             from IPython.display import display
 
-            display(f"Install nglview for interactive visualization.", f"{repr(self)}")
+            display("Install nglview for interactive visualization.", f"{repr(self)}")
 
     @staticmethod
     def _inertial_tensor(geom, *, weight):
@@ -1132,7 +1119,12 @@ class Molecule(ProtoModel):
             nel = sum(Zeff) - self.molecular_charge
 
         else:
-            nel = sum([zf for iat, zf in enumerate(Zeff) if iat in self.fragments[ifr]]) - self.fragment_charges[ifr]
+            nel = (
+                sum(
+                    zf for iat, zf in enumerate(Zeff) if iat in self.fragments[ifr]
+                )
+                - self.fragment_charges[ifr]
+            )
 
         return int(nel)
 

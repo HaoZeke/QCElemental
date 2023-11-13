@@ -21,16 +21,13 @@ def order_molecular_formula(formula: str, order: str = "alphabetical") -> str:
     """
 
     matches = re.findall(r"[A-Z][^A-Z]*", formula)
-    if not "".join(matches) == formula:
+    if "".join(matches) != formula:
         raise ValueError(f"{formula} is not a valid molecular formula.")
     count: Dict[str, int] = collections.defaultdict(int)
     for match in matches:
         match_n = re.match(r"(\D+)(\d*)", match)
         assert match_n
-        if match_n.group(2) == "":
-            n = 1
-        else:
-            n = int(match_n.group(2))
+        n = 1 if match_n.group(2) == "" else int(match_n.group(2))
         count[match_n.group(1)] += n
     symbols = [k for k, v in count.items() for i in range(v)]
     return molecular_formula_from_symbols(symbols=symbols, order=order)

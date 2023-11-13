@@ -92,7 +92,7 @@ class PhysicalConstantsContext:
                 v["quantity"],
                 v["unit"],
                 Decimal(v["value"]),
-                comment="uncertainty={}".format(v["uncertainty"]),
+                comment=f'uncertainty={v["uncertainty"]}',
                 doi=self.doi,
             )
 
@@ -204,7 +204,7 @@ class PhysicalConstantsContext:
             setattr(self, callname, float(qca.data))
 
     def __str__(self) -> str:
-        return "PhysicalConstantsContext(context='{}')".format(self.name)
+        return f"PhysicalConstantsContext(context='{self.name}')"
 
     @property
     def ureg(self) -> "UnitRegistry":
@@ -239,10 +239,7 @@ class PhysicalConstantsContext:
         """
         qca = self.pc[physical_constant.lower()]
 
-        if return_tuple:
-            return qca
-        else:
-            return float(qca.data)
+        return qca if return_tuple else float(qca.data)
 
     #       h                         'hertz-joule relationship'                  = 6.62606896E-34       # The Planck constant (Js)
     #       c                         'inverse meter-hertz relationship'          = 2.99792458E8         # Speed of light (ms$^{-1}$)
@@ -359,7 +356,9 @@ def run_comparison(context: str) -> None:
         UNDERLINE = "\033[4m"
 
     tol = 1.0e-8
-    print(bcolors.OKBLUE + "\nChecking ({}) physconst vs. Psi4 ...".format(tol) + bcolors.ENDC)
+    print(
+        f"{bcolors.OKBLUE}\nChecking ({tol}) physconst vs. Psi4 ...{bcolors.ENDC}"
+    )
     for pc in dir(checkup_data.physconst):
         if not pc.startswith("__"):
             ref = self.get(pc)
@@ -395,17 +394,23 @@ def run_internal_comparison(old_context: str, new_context: str) -> None:
     both = set(self.pc.keys()).intersection(other.pc.keys())
 
     self_only = set(self.pc.keys()).difference(both)
-    print(bcolors.WARNING + f"\nPhysConst in old {self.name} missing in new {other.name} ..." + bcolors.ENDC)
+    print(
+        f"{bcolors.WARNING}\nPhysConst in old {self.name} missing in new {other.name} ...{bcolors.ENDC}"
+    )
     for pc in sorted(self_only):
         print(pc, self.get(pc))
 
     other_only = set(other.pc.keys()).difference(both)
-    print(bcolors.WARNING + f"\nPhysConst in new {other.name} missing in old {self.name} ..." + bcolors.ENDC)
+    print(
+        f"{bcolors.WARNING}\nPhysConst in new {other.name} missing in old {self.name} ...{bcolors.ENDC}"
+    )
     for pc in sorted(other_only):
         print(pc, other.get(pc))
 
     tol = 1.0e-8
-    print(bcolors.OKBLUE + f"\nChecking ({tol}) physconst {self.name} vs. {other.name} ..." + bcolors.ENDC)
+    print(
+        f"{bcolors.OKBLUE}\nChecking ({tol}) physconst {self.name} vs. {other.name} ...{bcolors.ENDC}"
+    )
     for pc in sorted(both):
         if not pc.startswith("__"):
             ref = self.get(pc)
@@ -414,22 +419,18 @@ def run_internal_comparison(old_context: str, new_context: str) -> None:
             rat = abs(1.0 - float(ref) / val)
             if rat > 1.0e-4:
                 print(
-                    bcolors.FAIL
-                    + f"Physical Constant {pc} ratio differs by {rat:12.8f}: {ref} (this, {self.name}) vs {val} ({other.name})"
-                    + bcolors.ENDC
+                    f"{bcolors.FAIL}Physical Constant {pc} ratio differs by {rat:12.8f}: {ref} (this, {self.name}) vs {val} ({other.name}){bcolors.ENDC}"
                 )
             if rat > tol:
                 print(
                     f"Physical Constant {pc} ratio differs by {rat:12.8f}: {ref} (this, {self.name}) vs {val} ({other.name})"
                 )
 
-            refu = self.pc[pc].units
             valu = other.pc[pc].units
+            refu = self.pc[pc].units
             if refu != valu:
                 print(
-                    bcolors.BOLD
-                    + f"Physical Constant {pc} units differs: {refu} (this, {self.name}) vs {valu} ({other.name})"
-                    + bcolors.ENDC
+                    f"{bcolors.BOLD}Physical Constant {pc} units differs: {refu} (this, {self.name}) vs {valu} ({other.name}){bcolors.ENDC}"
                 )
 
 
@@ -447,13 +448,12 @@ def _get_pi(from_scratch: bool = False) -> "Decimal":
         A representation of Pi
     """
 
-    if from_scratch:  # pragma: no cover
-        from mpmath import mp
-
-        mp.dps = 36
-        return mp.pi
-    else:
+    if not from_scratch:
         return Decimal("3.14159265358979323846264338327950288")
+    from mpmath import mp
+
+    mp.dps = 36
+    return mp.pi
 
 
 def write_c_header(context, filename="physconst.h", prefix="pc_"):
@@ -477,23 +477,26 @@ def write_c_header(context, filename="physconst.h", prefix="pc_"):
 
     for pc, qca in sorted(self.pc.items()):
         callname = qca.label.translate(self._transtable)
-        noncomment = "#define {}{} {}".format(prefix, callname, qca.data)
+        noncomment = f"#define {prefix}{callname} {qca.data}"
         text.append("{:80}  /*- {} [{}] {} -*/".format(noncomment, qca.label, qca.units, qca.comment))
-    text.append("/* clang-format on */")
-
-    text.append("")
-    text.append("/* For Cray X1 compilers */")
-    text.append("#ifndef M_PI")
-    text.append("#define M_PI 3.14159265358979323846")
-    text.append("#endif")
-    text.append("")
-
-    text.append("#endif /* header guard */")
-    text.append("")
-
+    text.extend(
+        (
+            "/* clang-format on */",
+            "",
+            "/* For Cray X1 compilers */",
+            "#ifndef M_PI",
+            "#define M_PI 3.14159265358979323846",
+            "#endif",
+            "",
+            "#endif /* header guard */",
+            "",
+        )
+    )
     with open(filename, "w") as handle:
         handle.write("\n".join(text))
-    print("File written ({}). Remember to add license and clang-format it.".format(filename))
+    print(
+        f"File written ({filename}). Remember to add license and clang-format it."
+    )
 
 
 def write_fortran_header(context, filename="physconst.fh", prefix="pc_", kind=None):
@@ -509,25 +512,32 @@ def write_fortran_header(context, filename="physconst.fh", prefix="pc_", kind=No
     pi = _get_pi(from_scratch=False)
     tau = 2 * pi
     if kind is None:
-        declare = f"real, parameter ::"
-        text.append(f"{declare} {prefix}pi = {pi}")
-        text.append(f"{declare} {prefix}twopi = {tau}")
+        declare = "real, parameter ::"
+        text.extend(
+            (
+                f"{declare} {prefix}pi = {pi}",
+                f"{declare} {prefix}twopi = {tau}",
+            )
+        )
     else:
         declare = f"real({kind}), parameter ::"
-        text.append(f"{declare} {prefix}pi = {pi}_{kind}")
-        text.append(f"{declare} {prefix}twopi = {tau}_{kind}")
-
+        text.extend(
+            (
+                f"{declare} {prefix}pi = {pi}_{kind}",
+                f"{declare} {prefix}twopi = {tau}_{kind}",
+            )
+        )
     for pc, qca in sorted(self.pc.items()):
         callname = qca.label.translate(self._transtable)
         if kind is None:
-            noncomment = "{} {}{} = {}".format(declare, prefix, callname, qca.data)
+            noncomment = f"{declare} {prefix}{callname} = {qca.data}"
         else:
-            noncomment = "{} {}{} = {}_{}".format(declare, prefix, callname, qca.data, kind)
+            noncomment = f"{declare} {prefix}{callname} = {qca.data}_{kind}"
         text.append("{:80}  !! {} [{}] {}".format(noncomment, qca.label, qca.units, qca.comment))
 
     with open(filename, "w") as handle:
         handle.write("\n".join(text))
-    print("File written ({}). Remember to add license header.".format(filename))
+    print(f"File written ({filename}). Remember to add license header.")
 
 
 # singleton

@@ -24,12 +24,14 @@ from qcelemental.testing import compare, compare_values
 def test_parse_nucleus_label(inp, expected):
     lbl_A, lbl_Z, lbl_E, lbl_mass, lbl_real, lbl_user = qcelemental.molparse.nucleus.parse_nucleus_label(inp)
 
-    assert compare(expected["real"], lbl_real, inp + " real")
-    assert compare(expected["A"], lbl_A, inp + " A")
-    assert compare(expected["Z"], lbl_Z, inp + " Z")
-    assert compare(expected["E"], lbl_E, inp + " symbol")
-    assert compare(expected["user"], lbl_user, inp + " user")
-    assert compare_values(expected["mass"], lbl_mass, inp + " mass", passnone=True, atol=1.0e-6)
+    assert compare(expected["real"], lbl_real, f"{inp} real")
+    assert compare(expected["A"], lbl_A, f"{inp} A")
+    assert compare(expected["Z"], lbl_Z, f"{inp} Z")
+    assert compare(expected["E"], lbl_E, f"{inp} symbol")
+    assert compare(expected["user"], lbl_user, f"{inp} user")
+    assert compare_values(
+        expected["mass"], lbl_mass, f"{inp} mass", passnone=True, atol=1.0e-6
+    )
 
 
 @pytest.mark.parametrize("inp", ["1L1A1B1"])

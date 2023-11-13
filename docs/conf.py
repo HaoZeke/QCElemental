@@ -22,7 +22,7 @@ import qcelemental
 # -- Project information -----------------------------------------------------
 
 project = "QCElemental"
-copyright = f"2018-{datetime.datetime.today().year}, The Molecular Sciences Software Institute"
+copyright = f"2018-{datetime.datetime.now().year}, The Molecular Sciences Software Institute"
 author = "The QCArchive Development Team"
 
 # The short X.Y version

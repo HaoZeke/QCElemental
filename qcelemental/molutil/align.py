@@ -598,9 +598,7 @@ def compute_scramble(
     rand_elord = np.arange(nat)
     if do_resort is True:
         np.random.shuffle(rand_elord)
-    elif do_resort is False:
-        pass
-    else:
+    elif do_resort is not False:
         rand_elord = np.array(do_resort)
         assert rand_elord.shape == (nat,)
 
@@ -620,5 +618,9 @@ def compute_scramble(
         rand_rot3d = np.array(do_rotate)
         assert rand_rot3d.shape == (3, 3)
 
-    perturbation = AlignmentMill(shift=rand_shift, rotation=rand_rot3d, atommap=rand_elord, mirror=do_mirror)
-    return perturbation
+    return AlignmentMill(
+        shift=rand_shift,
+        rotation=rand_rot3d,
+        atommap=rand_elord,
+        mirror=do_mirror,
+    )

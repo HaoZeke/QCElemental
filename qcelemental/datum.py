@@ -78,16 +78,20 @@ class Datum(BaseModel):
 
     def __str__(self, label=""):
         width = 40
-        text = ["-" * width, "{:^{width}}".format("Datum " + self.label, width=width)]
+        text = ["-" * width, "{:^{width}}".format(f"Datum {self.label}", width=width)]
         if label:
             text.append("{:^{width}}".format(label, width=width))
-        text.append("-" * width)
-        text.append("Data:     {}".format(self.data))
-        text.append("Units:    [{}]".format(self.units))
-        text.append("doi:      {}".format(self.doi))
-        text.append("Comment:  {}".format(self.comment))
-        text.append("Glossary: {}".format(self.glossary))
-        text.append("-" * width)
+        text.extend(
+            (
+                "-" * width,
+                f"Data:     {self.data}",
+                f"Units:    [{self.units}]",
+                f"doi:      {self.doi}",
+                f"Comment:  {self.comment}",
+                f"Glossary: {self.glossary}",
+                "-" * width,
+            )
+        )
         return "\n".join(text)
 
     def dict(self, *args, **kwargs):
@@ -121,13 +125,13 @@ def print_variables(qcvars: Dict[str, "Datum"]) -> str:
     """
     text = ["\n  Variable Map:", "  ----------------------------------------------------------------------------"]
 
-    if len(qcvars) == 0:
+    if not qcvars:
         text.append("  (none)")
         return "\n".join(text)
 
     largest_key = max(len(k) for k in qcvars) + 2  # for quotation marks
     largest_characteristic = 8
-    for k, v in qcvars.items():
+    for v in qcvars.values():
         try:
             exp = int(str(v.data).split("E")[1])
         except IndexError:
@@ -141,29 +145,48 @@ def print_variables(qcvars: Dict[str, "Datum"]) -> str:
 
         if isinstance(qca.data, np.ndarray):
             data = np.array_str(qca.data, max_line_width=120, precision=8, suppress_small=True)
-            data = "\n".join("        " + ln for ln in data.splitlines())
-            text.append(
-                """  {:{keywidth}} => {:{width}} [{}]""".format(
-                    '"' + k + '"', "", qca.units, keywidth=largest_key, width=largest_characteristic + 14
+            data = "\n".join(f"        {ln}" for ln in data.splitlines())
+            text.extend(
+                (
+                    """  {:{keywidth}} => {:{width}} [{}]""".format(
+                        f'"{k}"',
+                        "",
+                        qca.units,
+                        keywidth=largest_key,
+                        width=largest_characteristic + 14,
+                    ),
+                    data,
                 )
             )
-            text.append(data)
         elif isinstance(qca.data, Decimal):
             text.append(
                 """  {:{keywidth}} => {:{width}} [{}]""".format(
-                    '"' + k + '"', qca.data, qca.units, keywidth=largest_key, width=largest_characteristic + 14
+                    f'"{k}"',
+                    qca.data,
+                    qca.units,
+                    keywidth=largest_key,
+                    width=largest_characteristic + 14,
                 )
             )
         elif not qca.numeric:
             text.append(
                 """  {:{keywidth}} => {:>{width}} [{}]""".format(
-                    '"' + k + '"', str(qca.data), qca.units, keywidth=largest_key, width=largest_characteristic + 14
+                    f'"{k}"',
+                    str(qca.data),
+                    qca.units,
+                    keywidth=largest_key,
+                    width=largest_characteristic + 14,
                 )
             )
         else:
             text.append(
                 """  {:{keywidth}} => {:{width}.{prec}f} [{}]""".format(
-                    '"' + k + '"', qca.data, qca.units, keywidth=largest_key, width=largest_characteristic + 14, prec=12
+                    f'"{k}"',
+                    qca.data,
+                    qca.units,
+                    keywidth=largest_key,
+                    width=largest_characteristic + 14,
+                    prec=12,
                 )
             )
 

@@ -44,16 +44,15 @@ class CovalentRadii:
 
         from .data import alvarez_2008_covalent_radii
 
-        if context == "ALVAREZ2008":
-            self.doi = alvarez_2008_covalent_radii["doi"]
-            self.native_units = alvarez_2008_covalent_radii["units"]
-
-            # TypedDict wont be in until 3.8, have to ignore heterogeneous dicts for now
-            for cr in alvarez_2008_covalent_radii["covalent_radii"]:  # type: ignore
-                self.cr[cr[0]] = Datum(cr[0], self.native_units, Decimal(cr[1]), comment=cr[2], doi=self.doi)
-        else:
+        if context != "ALVAREZ2008":
             raise KeyError(f"Context set as '{context}', " + "only contexts {'ALVAREZ2008', } are currently supported")
 
+        self.doi = alvarez_2008_covalent_radii["doi"]
+        self.native_units = alvarez_2008_covalent_radii["units"]
+
+        # TypedDict wont be in until 3.8, have to ignore heterogeneous dicts for now
+        for cr in alvarez_2008_covalent_radii["covalent_radii"]:  # type: ignore
+            self.cr[cr[0]] = Datum(cr[0], self.native_units, Decimal(cr[1]), comment=cr[2], doi=self.doi)
         self.name = context
         self.year = int(alvarez_2008_covalent_radii["date"][:4])  # type: ignore
 
@@ -71,7 +70,7 @@ class CovalentRadii:
             self.cr[ident.capitalize()] = Datum(ident, units, value, comment=comment)
 
     def __str__(self) -> str:
-        return "CovalentRadii(context='{}')".format(self.name)
+        return f"CovalentRadii(context='{self.name}')"
 
     def get(
         self, atom: Union[int, str], *, return_tuple: bool = False, units: str = "bohr", missing: float = None
@@ -120,25 +119,17 @@ class CovalentRadii:
             If `atom` is a valid element or nuclide but not one for which a covalent radius is available and `missing=None`.
 
         """
-        if atom in self.cr.keys():
-            # catch extra labels like 'C_sp3'
-            identifier = atom
-        else:
-            identifier = periodictable.to_E(atom)
-
+        identifier = atom if atom in self.cr.keys() else periodictable.to_E(atom)
         try:
             assert isinstance(identifier, str)  # Should be string by now
             qca = self.cr[identifier]
         except KeyError as e:
-            if missing is not None and return_tuple is False:
+            if missing is not None and not return_tuple:
                 return missing
             else:
                 raise DataUnavailableError("covalent radius", identifier) from e
 
-        if return_tuple:
-            return qca
-        else:
-            return qca.to_units(units)
+        return qca if return_tuple else qca.to_units(units)
 
     def string_representation(self) -> str:
         """Print name, value, and units of all covalent radii."""
@@ -169,7 +160,7 @@ class CovalentRadii:
         for el in periodictable.E:
             try:
                 qca = self.cr[el]
-                text.append("{},  /*- [{}] {} {} -*/".format(qca.data, qca.units, qca.label, qca.comment))
+                text.append(f"{qca.data},  /*- [{qca.units}] {qca.label} {qca.comment} -*/")
             except KeyError:
                 text.append(
                     "{:.2f},  /*- [{}] {} {} -*/".format(
@@ -177,13 +168,12 @@ class CovalentRadii:
                     )
                 )
 
-        text.append("};")
-        text.append("#endif /* header guard */")
-        text.append("")
-
+        text.extend(("};", "#endif /* header guard */", ""))
         with open(filename, "w") as handle:
             handle.write("\n".join(text))
-        print("File written ({}). Remember to add license and clang-format it.".format(filename))
+        print(
+            f"File written ({filename}). Remember to add license and clang-format it."
+        )
 
 
 # singleton

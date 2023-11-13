@@ -67,7 +67,6 @@ def from_input_arrays(
     if enable_efp:
         molinit["efp"] = {}
 
-    if enable_efp:
         processed = from_arrays(
             domain="efp",
             missing_enabled_return=missing_enabled_return_efp,
@@ -86,8 +85,11 @@ def from_input_arrays(
         if molinit["efp"] == {}:
             del molinit["efp"]
 
-    efp_present = enable_efp and "efp" in molinit and bool(len(molinit["efp"]["geom_hints"]))
-    if efp_present:
+    if (
+        efp_present := enable_efp
+        and "efp" in molinit
+        and bool(len(molinit["efp"]["geom_hints"]))
+    ):
         fix_com = True
         fix_orientation = True
         fix_symmetry = "c1"

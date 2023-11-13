@@ -61,11 +61,10 @@ def _formDirected(g, match):
                 d.add_edge(ee[0], ee[1])
             else:
                 d.add_edge(ee[1], ee[0])
+        elif g.nodes[ee[0]]["bipartite"] == 0:
+            d.add_edge(ee[1], ee[0])
         else:
-            if g.nodes[ee[0]]["bipartite"] == 0:
-                d.add_edge(ee[1], ee[0])
-            else:
-                d.add_edge(ee[0], ee[1])
+            d.add_edge(ee[0], ee[1])
 
     return d
 
@@ -94,22 +93,17 @@ def _enumMaximumMatching(g, starter_match=None):
     """
     import networkx as nx
 
-    all_matches = []
-
     # ----------------Find one matching M----------------
     if starter_match is None:
         match = nx.bipartite.hopcroft_karp_matching(g)
     else:
         match = starter_match
 
-    # ---------------Re-orient match arcs---------------
-    match2 = []
-    for kk, vv in match.items():
-        if g.nodes[kk]["bipartite"] == 0:
-            match2.append((kk, vv))
+    match2 = [
+        (kk, vv) for kk, vv in match.items() if g.nodes[kk]["bipartite"] == 0
+    ]
     match = match2
-    all_matches.append(match)
-
+    all_matches = [match]
     # -----------------Enter recursion-----------------
     all_matches = _enumMaximumMatchingIter(g, match, all_matches, None)
 
@@ -149,17 +143,51 @@ def _enumMaximumMatchingIter(g, match, all_matches, add_e=None):
     # ---------------Form directed graph D---------------
     d = _formDirected(g, match)
 
-    # -----------------Find cycles in D-----------------
-    cycles = list(nx.simple_cycles(d))
+    if cycles := list(nx.simple_cycles(d)):
+        # ----------------Find a cycle in D----------------
+        cycle = cycles[0]
+        cycle.append(cycle[0])
+        cycle = list(zip(cycle[:-1], cycle[1:]))
 
-    if len(cycles) == 0:
+        # -------------Create a new matching M'-------------
+        new_match = []
+        for ee in d.edges():
+            if ee in cycle:
+                if g.nodes[ee[1]]["bipartite"] == 0:
+                    new_match.append((ee[1], ee[0]))
+            elif g.nodes[ee[0]]["bipartite"] == 0:
+                new_match.append(ee)
+
+        if add_e is not None:
+            new_match.extend(iter(add_e))
+        all_matches.append(new_match)
+
+        # -----------------Choose an edge E-----------------
+        e = set(match).intersection(set(cycle))
+        e = list(e)[0]
+
+        # -----------------Form subproblems-----------------
+        g_plus = g.copy()
+        g_minus = g.copy()
+        g_plus.remove_node(e[0])
+        g_plus.remove_node(e[1])
+        g_minus.remove_edge(e[0], e[1])
+
+        add_e_new = [e]
+        if add_e is not None:
+            add_e_new.extend(add_e)
+
+        all_matches = _enumMaximumMatchingIter(g_minus, new_match, all_matches, add_e)
+        all_matches = _enumMaximumMatchingIter(g_plus, match, all_matches, add_e_new)
+
+    else:
         # ---------If no cycle, find a feasible path---------
-        all_uncovered = set(g.nodes).difference(set([ii[0] for ii in match]))
-        all_uncovered = all_uncovered.difference(set([ii[1] for ii in match]))
+        all_uncovered = set(g.nodes).difference({ii[0] for ii in match})
+        all_uncovered = all_uncovered.difference({ii[1] for ii in match})
         all_uncovered = list(all_uncovered)
 
         # --------------If no path, terminiate--------------
-        if len(all_uncovered) == 0:
+        if not all_uncovered:
             return all_matches
 
         # ----------Find a length 2 feasible path----------
@@ -170,7 +198,7 @@ def _enumMaximumMatchingIter(g, match, all_matches, add_e=None):
                 paths = nx.single_source_shortest_path(d, uncovered, cutoff=2)
                 len2paths = [vv for kk, vv in paths.items() if len(vv) == 3]
 
-                if len(len2paths) > 0:
+                if len2paths:
                     reversed = False
                     break
 
@@ -178,7 +206,7 @@ def _enumMaximumMatchingIter(g, match, all_matches, add_e=None):
                 paths_rev = nx.single_source_shortest_path(d.reverse(), uncovered, cutoff=2)
                 len2paths = [vv for kk, vv in paths_rev.items() if len(vv) == 3]
 
-                if len(len2paths) > 0:
+                if len2paths:
                     reversed = True
                     break
 
@@ -199,14 +227,11 @@ def _enumMaximumMatchingIter(g, match, all_matches, add_e=None):
             if ee in len2path:
                 if g.nodes[ee[1]]["bipartite"] == 0:
                     new_match.append((ee[1], ee[0]))
-            else:
-                if g.nodes[ee[0]]["bipartite"] == 0:
-                    new_match.append(ee)
+            elif g.nodes[ee[0]]["bipartite"] == 0:
+                new_match.append(ee)
 
         if add_e is not None:
-            for ii in add_e:
-                new_match.append(ii)
-
+            new_match.extend(iter(add_e))
         all_matches.append(new_match)
 
         # ---------------------Select e---------------------
@@ -227,46 +252,6 @@ def _enumMaximumMatchingIter(g, match, all_matches, add_e=None):
 
         all_matches = _enumMaximumMatchingIter(g_minus, match, all_matches, add_e)
         all_matches = _enumMaximumMatchingIter(g_plus, new_match, all_matches, add_e_new)
-
-    else:
-        # ----------------Find a cycle in D----------------
-        cycle = cycles[0]
-        cycle.append(cycle[0])
-        cycle = list(zip(cycle[:-1], cycle[1:]))
-
-        # -------------Create a new matching M'-------------
-        new_match = []
-        for ee in d.edges():
-            if ee in cycle:
-                if g.nodes[ee[1]]["bipartite"] == 0:
-                    new_match.append((ee[1], ee[0]))
-            else:
-                if g.nodes[ee[0]]["bipartite"] == 0:
-                    new_match.append(ee)
-
-        if add_e is not None:
-            for ii in add_e:
-                new_match.append(ii)
-
-        all_matches.append(new_match)
-
-        # -----------------Choose an edge E-----------------
-        e = set(match).intersection(set(cycle))
-        e = list(e)[0]
-
-        # -----------------Form subproblems-----------------
-        g_plus = g.copy()
-        g_minus = g.copy()
-        g_plus.remove_node(e[0])
-        g_plus.remove_node(e[1])
-        g_minus.remove_edge(e[0], e[1])
-
-        add_e_new = [e]
-        if add_e is not None:
-            add_e_new.extend(add_e)
-
-        all_matches = _enumMaximumMatchingIter(g_minus, new_match, all_matches, add_e)
-        all_matches = _enumMaximumMatchingIter(g_plus, match, all_matches, add_e_new)
 
     return all_matches
 
@@ -296,14 +281,12 @@ def _enumMaximumMatching2(g):
     import networkx as nx
     from scipy import sparse
 
-    s1 = set(n for n, d in g.nodes(data=True) if d["bipartite"] == 0)
+    s1 = {n for n, d in g.nodes(data=True) if d["bipartite"] == 0}
     s2 = set(g) - s1
     n1 = len(s1)
     nodes = list(s1) + list(s2)
 
     adj = nx.adjacency_matrix(g, nodes).tolil()
-    all_matches = []
-
     # ----------------Find one matching----------------
     match = nx.bipartite.hopcroft_karp_matching(g)
 
@@ -312,8 +295,7 @@ def _enumMaximumMatching2(g):
         matchadj[nodes.index(kk), nodes.index(vv)] = 1
     matchadj = sparse.lil_matrix(matchadj)
 
-    all_matches.append(matchadj)
-
+    all_matches = [matchadj]
     # -----------------Enter recursion-----------------
     all_matches = _enumMaximumMatchingIter2(adj, matchadj, all_matches, n1, None, True)
 
@@ -371,11 +353,7 @@ def _enumMaximumMatchingIter2(adj, matchadj, all_matches, n1, add_e=None, check_
 
         dg = nx.from_numpy_array(d.toarray(), create_using=nx.DiGraph())
         cycles = list(nx.simple_cycles(dg))
-        if len(cycles) == 0:
-            check_cycle = False
-        else:
-            check_cycle = True
-
+        check_cycle = len(cycles) != 0
     if check_cycle:
         cycle = cycles[0]
         cycle.append(cycle[0])
@@ -429,10 +407,10 @@ def _enumMaximumMatchingIter2(adj, matchadj, all_matches, n1, add_e=None, check_
             if aa.sum() == 0:
                 continue
             paths.append((ii, int(sparse.find(aa == 1)[1][0])))
-            if len(paths) > 0:
+            if paths:
                 break
 
-        if len(paths) == 0:
+        if not paths:
             return all_matches
 
         # ----------------------Find e----------------------
@@ -535,6 +513,4 @@ def uno(edges, match=None, verbose=1):
     g.add_edges_from(p_edges)
 
     all_matches = _enumMaximumMatching(g, starter_match=p_match)
-    p_all_matches = [sorted([(pt[0][1], pt[1][1]) for pt in am]) for am in all_matches]
-
-    return p_all_matches
+    return [sorted([(pt[0][1], pt[1][1]) for pt in am]) for am in all_matches]
